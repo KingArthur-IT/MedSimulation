@@ -18,21 +18,32 @@ window.onload = function () {
     scene.add(light);
     //Load background texture
     let loader = new THREE.TextureLoader();
-    loader.load('./assets/img/interaction_bg.jpg' , function(texture){
+    loader.load('./assets/img/interaction_bg.jpg', function (texture) {
+        texture.minFilter = THREE.LinearFilter;
         scene.background = texture;  
     });
+    //pattern
+    const patternPlane = new THREE.PlaneGeometry(450.0, 450.0, 10.0);
+    loader = new THREE.TextureLoader();
+    let material = new THREE.MeshBasicMaterial({
+        map: loader.load('./assets/img/pattern.png'),
+        transparent: true
+     });
+    let mesh = new THREE.Mesh(patternPlane, material);
+    mesh.position.z += 250;
+    scene.add(mesh);
 
     //objects
     let penObj = new THREE.Object3D();
     let baseObj = new THREE.Object3D();
     let mtlLoader = new THREE.MTLLoader();
-    mtlLoader.setPath("../assets/models/");
+    mtlLoader.setPath("./assets/models/");
     //load pen
     mtlLoader.load('bovie.mtl', function(materials) {
         materials.preload();
         let objLoader = new THREE.OBJLoader();
         objLoader.setMaterials(materials);
-        objLoader.setPath("../assets/models/");
+        objLoader.setPath("./assets/models/");
         objLoader.load('bovie.obj', function (object) {
             object.scale.set(40, 40, 40);
             object.position.set(0, 0, 0);
@@ -57,7 +68,7 @@ window.onload = function () {
         materials.preload();
         let objLoader = new THREE.OBJLoader();
         objLoader.setMaterials(materials);
-        objLoader.setPath("../assets/models/");
+        objLoader.setPath("./assets/models/");
         objLoader.load('base.obj', function (object) {
             object.scale.set(70, 70, 70);
             object.position.set(0, 0, 0);
