@@ -79,8 +79,11 @@ window.onload = function () {
         isDown: false
     }
     canvas.addEventListener("mousemove", mouse_move_handler);
+    canvas.addEventListener("touchmove", touch_move_handler);
     canvas.addEventListener("mousedown", mouse_down_handler);
+    canvas.addEventListener("touchstart", touch_start_handler);
     canvas.addEventListener("mouseup", mouse_up_handler);
+    canvas.addEventListener("touchend", mouse_up_handler);
     
     function mouse_move_handler(e) {
         if (!mouseObj.isDown) return;
@@ -94,9 +97,33 @@ window.onload = function () {
         penObj.rotation.y = -yAngle;
         penObj.rotation.x = xAngle;
     }
+    function touch_move_handler(e) {
+        if (!mouseObj.isDown) return;
+        let centerX = width / 2.0,
+            centerY = height / 2.0,
+            R = 200,
+            maxAngle = Math.PI / 4.0;
+        
+        let yAngle = maxAngle * mod( (centerX - e.touches[0].pageX) / R );
+        let xAngle = maxAngle * mod( (e.touches[0].pageY - centerY) / R );
+        penObj.rotation.y = -yAngle;
+        penObj.rotation.x = xAngle;
+    }
 
-    function mouse_down_handler() {
-        mouseObj.isDown = true;
+    function mouse_down_handler(e) {
+        let eps = 5,
+            getPenX = width / 2.0,
+            getPenY = 80;
+        if (Math.abs(e.x - getPenX) < eps && Math.abs(e.y - getPenY) < eps)
+            mouseObj.isDown = true;
+    }
+
+    function touch_start_handler(e) {
+        let eps = 5,
+            getPenX = width / 2.0,
+            getPenY = 80;
+        if (Math.abs(e.touches[0].pageX - getPenX) < eps && Math.abs(e.touches[0].pageY - getPenY) < eps)
+            mouseObj.isDown = true;
     }
     
     function mouse_up_handler() {
