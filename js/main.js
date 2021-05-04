@@ -23,19 +23,18 @@ window.onload = function () {
         scene.background = texture;  
     });
     //pattern
-    const patternPlane = new THREE.PlaneGeometry(450.0, 450.0, 10.0);
+    const patternPlane = new THREE.PlaneGeometry(850.0, 450.0, 10.0);
     loader = new THREE.TextureLoader();
     let material = new THREE.MeshBasicMaterial({
-        map: loader.load('./assets/img/pattern.png'),
+        map: loader.load('./assets/img/path.png'),
         transparent: true
      });
     let mesh = new THREE.Mesh(patternPlane, material);
-    mesh.position.z += 250;
+    mesh.position.z += 400;
     scene.add(mesh);
 
     //objects
     let penObj = new THREE.Object3D();
-    let baseObj = new THREE.Object3D();
     let mtlLoader = new THREE.MTLLoader();
     mtlLoader.setPath("./assets/models/");
     //load pen
@@ -45,7 +44,7 @@ window.onload = function () {
         objLoader.setMaterials(materials);
         objLoader.setPath("./assets/models/");
         objLoader.load('bovie.obj', function (object) {
-            object.scale.set(40, 40, 40);
+            object.scale.set(50, 50, 50);
             object.position.set(0, 0, 0);
             object.rotation.set(Math.PI / 2.0, 10, 0);
             penObj.add(object);
@@ -53,30 +52,23 @@ window.onload = function () {
         });
     });
     let penInitialParams = {
-        angleX: - Math.PI / 6.0,
+        angleX: - (25.0) * Math.PI / 180.0,
         angleY: 0.0,
-        angleZ: 0.0
+        angleZ: 0.0,
+        positionX: 6,
+        positionY: -40,
+        positionZ: 0
     }
     function startPenObject() {
         penObj.rotation.x = penInitialParams.angleX;
         penObj.rotation.y = penInitialParams.angleY;
         penObj.rotation.z = penInitialParams.angleZ;
+        penObj.position.x = penInitialParams.positionX;
+        penObj.position.y = penInitialParams.positionY;
+        penObj.position.z = penInitialParams.positionZ;
+        
     }; 
     startPenObject();
-    //load base
-    mtlLoader.load('base.mtl', function(materials) {
-        materials.preload();
-        let objLoader = new THREE.OBJLoader();
-        objLoader.setMaterials(materials);
-        objLoader.setPath("./assets/models/");
-        objLoader.load('base.obj', function (object) {
-            object.scale.set(70, 70, 70);
-            object.position.set(0, 0, 0);
-            object.rotation.set(Math.PI / 2.0, 0, 0);
-            baseObj.add(object);
-            scene.add(baseObj);
-        });
-    });
     
     //main render loop
     function loop() {
@@ -101,10 +93,13 @@ window.onload = function () {
         let centerX = width / 2.0,
             centerY = height / 2.0,
             R = 200,
-            maxAngle = Math.PI / 4.0;
+            maxAngle = (28.0) * Math.PI / 180.0;
         
-        let yAngle = maxAngle * mod( (centerX - e.x) / R );
-        let xAngle = maxAngle * mod( (e.y - centerY) / R );
+        let yAngle = maxAngle * mod((centerX - e.x) / R);
+        yAngle *= (e.x - centerX - penInitialParams.positionX) / (e.x - centerX);
+        let xAngle = maxAngle * mod((e.y - centerY) / R);
+        xAngle *= (e.y - centerY + penInitialParams.positionY) / (e.y - centerY);
+        
         penObj.rotation.y = -yAngle;
         penObj.rotation.x = xAngle;
     }
@@ -122,9 +117,9 @@ window.onload = function () {
     }
 
     function mouse_down_handler(e) {
-        let eps = 5,
-            getPenX = width / 2.0,
-            getPenY = 80;
+        let eps = 10,
+            getPenX = width / 2.0 + penInitialParams.positionX,
+            getPenY = 85;
         if (Math.abs(e.x - getPenX) < eps && Math.abs(e.y - getPenY) < eps)
             mouseObj.isDown = true;
     }
