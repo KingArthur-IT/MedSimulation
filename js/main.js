@@ -2,6 +2,32 @@ window.onload = function () {
     //canvas params
     let width = 850;
     let height = 450;
+    let pathSrc = './assets/img/path.png';
+    
+    //unseen canvas to draw the pattern and get data from it
+    let patternData = [];
+    let patternCanvas = document.getElementById('patternCanvas');
+    patternCanvas.setAttribute('width', width);
+    patternCanvas.setAttribute('height', height);
+    let patternCanvasContex = patternCanvas.getContext('2d');
+    let image = new Image(); image.src = pathSrc;
+    image.onload = function () {
+        patternCanvasContex.drawImage(image, 0, 0)
+        let patternDataExtended = patternCanvasContex.getImageData(0, 0, width, height).data;
+        let i = 0;
+        do {
+            if (patternDataExtended[i] == 0 &&
+                patternDataExtended[i + 1] == 0 &&
+                patternDataExtended[i + 2] == 0 &&
+                patternDataExtended[i + 3] == 0)
+                patternData.push(0);
+            else patternData.push(1);
+            i += 4;
+        } while (i < patternDataExtended.length);
+        //console.log(patternData);
+    };
+
+    //main canvas to draw the scene
     let canvas = document.getElementById('canvas');
     canvas.setAttribute('width',  width);
     canvas.setAttribute('height', height);
@@ -32,6 +58,7 @@ window.onload = function () {
     });    
     let mesh = new THREE.Mesh(patternPlane, material); 
     mesh.position.z += 400;
+    mesh.rotation.x = 0.0;// * Math.PI / 180.0;
     scene.add(mesh);
 
     //objects
@@ -81,7 +108,11 @@ window.onload = function () {
         
     //mouse
     let mouseObj = {
-        isDown: false
+        isDown: false,
+        startX: 0,
+        startY: 0,
+        endX: 0,
+        endY: 0
     }
     canvas.addEventListener("mousemove", mouse_move_handler);
     canvas.addEventListener("touchmove", touch_move_handler);
@@ -91,12 +122,32 @@ window.onload = function () {
     canvas.addEventListener("touchend", mouse_up_handler);
     
     function mouse_move_handler(e) {
+        //let k = (e.x + width * e.y);
         if (!mouseObj.isDown) return;
         let centerX = width / 2.0,
             centerY = height / 2.0,
             R = 200, //max pixel radius of pen moving
             maxAngle = (28.0) * Math.PI / 180.0; //max angle of pen rotate in radians
         
+        //training regime
+        mouseObj.endX = mouseObj.startX;
+        mouseObj.endY = mouseObj.startY;
+        mouseObj.startX = e.x;
+        mouseObj.startY = e.y;
+        let k = (e.x + width * e.y);
+        if (patternData[k] == 1) {
+            //caclulate rotation angle around y and x axises
+            let yAngle = maxAngle * mod((centerX - e.x) / R);
+            let xAngle = maxAngle * mod((e.y - centerY) / R);
+            //angle correction based on non centered obj position
+            yAngle *= (e.x - centerX - penInitialParams.positionX) / (e.x - centerX);        
+            xAngle *= (e.y - centerY + penInitialParams.positionY) / (e.y - centerY);
+            
+            penObj.rotation.y = -yAngle;
+            penObj.rotation.x = xAngle;
+        }
+            
+        /*
         //caclulate rotation angle around y and x axises
         let yAngle = maxAngle * mod((centerX - e.x) / R);
         let xAngle = maxAngle * mod((e.y - centerY) / R);
@@ -106,6 +157,7 @@ window.onload = function () {
         
         penObj.rotation.y = -yAngle;
         penObj.rotation.x = xAngle;
+        */
     }
     function touch_move_handler(e) {
         if (!mouseObj.isDown) return;
@@ -129,8 +181,11 @@ window.onload = function () {
         let eps = 10, //pixel gap to get the pen by its end
             getPenX = width / 2.0 + penInitialParams.positionX, //coords of pen`s end
             getPenY = 85;
-        if (Math.abs(e.x - getPenX) < eps && Math.abs(e.y - getPenY) < eps)
+        if (Math.abs(e.x - getPenX) < eps && Math.abs(e.y - getPenY) < eps) {
             mouseObj.isDown = true;
+            mouseObj.startX = e.x;
+            mouseObj.startY = e.y;
+        }
     }
 
     function touch_start_handler(e) {
