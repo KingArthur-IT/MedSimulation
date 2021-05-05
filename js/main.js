@@ -26,10 +26,11 @@ window.onload = function () {
     const patternPlane = new THREE.PlaneGeometry(850.0, 450.0, 10.0);
     loader = new THREE.TextureLoader();
     let material = new THREE.MeshBasicMaterial({
-        map: loader.load('./assets/img/path.png'),
+        map: loader.load('./assets/img/path.png', function (texture) {
+            texture.minFilter = THREE.LinearFilter; }),
         transparent: true
-     });
-    let mesh = new THREE.Mesh(patternPlane, material);
+    });    
+    let mesh = new THREE.Mesh(patternPlane, material); 
     mesh.position.z += 400;
     scene.add(mesh);
 
@@ -51,6 +52,7 @@ window.onload = function () {
             scene.add(penObj);
         });
     });
+    //initial params of pen obj
     let penInitialParams = {
         angleX: - (25.0) * Math.PI / 180.0,
         angleY: 0.0,
@@ -59,14 +61,14 @@ window.onload = function () {
         positionY: -40,
         positionZ: 0
     }
+    //set pen to initial state func
     function startPenObject() {
         penObj.rotation.x = penInitialParams.angleX;
         penObj.rotation.y = penInitialParams.angleY;
         penObj.rotation.z = penInitialParams.angleZ;
         penObj.position.x = penInitialParams.positionX;
         penObj.position.y = penInitialParams.positionY;
-        penObj.position.z = penInitialParams.positionZ;
-        
+        penObj.position.z = penInitialParams.positionZ;        
     }; 
     startPenObject();
     
@@ -92,12 +94,14 @@ window.onload = function () {
         if (!mouseObj.isDown) return;
         let centerX = width / 2.0,
             centerY = height / 2.0,
-            R = 200,
-            maxAngle = (28.0) * Math.PI / 180.0;
+            R = 200, //max pixel radius of pen moving
+            maxAngle = (28.0) * Math.PI / 180.0; //max angle of pen rotate in radians
         
+        //caclulate rotation angle around y and x axises
         let yAngle = maxAngle * mod((centerX - e.x) / R);
-        yAngle *= (e.x - centerX - penInitialParams.positionX) / (e.x - centerX);
         let xAngle = maxAngle * mod((e.y - centerY) / R);
+        //angle correction based on non centered obj position
+        yAngle *= (e.x - centerX - penInitialParams.positionX) / (e.x - centerX);        
         xAngle *= (e.y - centerY + penInitialParams.positionY) / (e.y - centerY);
         
         penObj.rotation.y = -yAngle;
@@ -107,27 +111,32 @@ window.onload = function () {
         if (!mouseObj.isDown) return;
         let centerX = width / 2.0,
             centerY = height / 2.0,
-            R = 200,
-            maxAngle = Math.PI / 4.0;
+            R = 200, //max pixel radius of pen moving
+            maxAngle = (28.0) * Math.PI / 180.0; //max angle of pen rotate in radians
         
-        let yAngle = maxAngle * mod( (centerX - e.touches[0].pageX) / R );
-        let xAngle = maxAngle * mod( (e.touches[0].pageY - centerY) / R );
+        //caclulate rotation angle around y and x axises
+        let yAngle = maxAngle * mod((centerX - e.touches[0].pageX) / R);
+        let xAngle = maxAngle * mod((e.touches[0].pageY - centerY) / R);
+        //angle correction based on non centered obj position
+        yAngle *= (e.touches[0].pageX - centerX - penInitialParams.positionX) / (e.touches[0].pageX - centerX);        
+        xAngle *= (e.touches[0].pageY - centerY + penInitialParams.positionY) / (e.touches[0].pageY - centerY);
+        
         penObj.rotation.y = -yAngle;
         penObj.rotation.x = xAngle;
     }
 
     function mouse_down_handler(e) {
-        let eps = 10,
-            getPenX = width / 2.0 + penInitialParams.positionX,
+        let eps = 10, //pixel gap to get the pen by its end
+            getPenX = width / 2.0 + penInitialParams.positionX, //coords of pen`s end
             getPenY = 85;
         if (Math.abs(e.x - getPenX) < eps && Math.abs(e.y - getPenY) < eps)
             mouseObj.isDown = true;
     }
 
     function touch_start_handler(e) {
-        let eps = 5,
-            getPenX = width / 2.0,
-            getPenY = 80;
+        let eps = 10, //pixel gap to get the pen by its end
+            getPenX = width / 2.0 + penInitialParams.positionX, //coords of pen`s end
+            getPenY = 85;
         if (Math.abs(e.touches[0].pageX - getPenX) < eps && Math.abs(e.touches[0].pageY - getPenY) < eps)
             mouseObj.isDown = true;
     }
