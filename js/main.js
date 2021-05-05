@@ -1,22 +1,32 @@
 window.onload = function () {
-    //canvas params
-    let width = 850;
-    let height = 450;
-    let pathSrc = './assets/img/path.png';
+    //params
+    let cfg = {
+        width: 850,
+        height: 450,
+        pathSrc: './assets/img/path.png',
+        bgSrc: './assets/img/interaction_bg.jpg',
+        modelsPath: './assets/models/',
+        pensSize: 50,
+        centerX: 425,
+        centerY: 225,
+        R: 200, //max pixel radius of pen moving
+        maxAngle: (26.0) * Math.PI / 180.0
+    }
     
     //unseen canvas to draw the pattern and get data from it
-    let patternData = [];
+    let patternData = []; //data 850x450 of 0 and 1. where 0 - no path in coord, 1 - has path 
     let patternCanvas = document.getElementById('patternCanvas');
-    patternCanvas.setAttribute('width', width);
-    patternCanvas.setAttribute('height', height);
+    patternCanvas.setAttribute('width', cfg.width);
+    patternCanvas.setAttribute('height', cfg.height);
     let patternCanvasContex = patternCanvas.getContext('2d');
-    let image = new Image(); image.src = pathSrc;
+    let image = new Image(); image.src = cfg.pathSrc;
     image.onload = function () {
         patternCanvasContex.drawImage(image, 0, 0)
-        let patternDataExtended = patternCanvasContex.getImageData(0, 0, width, height).data;
+        //extended data array have color of each pixel in RGBA
+        let patternDataExtended = patternCanvasContex.getImageData(0, 0, cfg.width, cfg.height).data;
         let i = 0;
         do {
-            if (patternDataExtended[i] == 0 &&
+            if (patternDataExtended[i] == 0 && 
                 patternDataExtended[i + 1] == 0 &&
                 patternDataExtended[i + 2] == 0 &&
                 patternDataExtended[i + 3] == 0)
@@ -24,55 +34,53 @@ window.onload = function () {
             else patternData.push(1);
             i += 4;
         } while (i < patternDataExtended.length);
-        //console.log(patternData);
     };
 
     //main canvas to draw the scene
     let canvas = document.getElementById('canvas');
-    canvas.setAttribute('width',  width);
-    canvas.setAttribute('height', height);
+    canvas.setAttribute('width',  cfg.width);
+    canvas.setAttribute('height', cfg.height);
 
     //renderer
     let renderer = new THREE.WebGLRenderer({ canvas: canvas });
     renderer.setClearColor(0x000000);
     //scene and camera
     let scene = new THREE.Scene();
-    let camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 5000); //width / height
+    let camera = new THREE.PerspectiveCamera(40.0, cfg.width / cfg.height, 0.1, 5000); 
     camera.position.set(0, 0, 1000);
     //light
     let light = new THREE.AmbientLight(0xffffff);
     scene.add(light);
     //Load background texture
     let loader = new THREE.TextureLoader();
-    loader.load('./assets/img/interaction_bg.jpg', function (texture) {
+    loader.load(cfg.bgSrc, function (texture) {
         texture.minFilter = THREE.LinearFilter;
         scene.background = texture;  
     });
     //pattern
-    const patternPlane = new THREE.PlaneGeometry(850.0, 450.0, 10.0);
+    const patternPlane = new THREE.PlaneGeometry(cfg.width, cfg.height, 10.0);
     loader = new THREE.TextureLoader();
     let material = new THREE.MeshBasicMaterial({
-        map: loader.load('./assets/img/path.png', function (texture) {
+        map: loader.load(cfg.pathSrc, function (texture) {
             texture.minFilter = THREE.LinearFilter; }),
         transparent: true
     });    
     let mesh = new THREE.Mesh(patternPlane, material); 
     mesh.position.z += 400;
-    mesh.rotation.x = 0.0;// * Math.PI / 180.0;
     scene.add(mesh);
 
     //objects
     let penObj = new THREE.Object3D();
     let mtlLoader = new THREE.MTLLoader();
-    mtlLoader.setPath("./assets/models/");
+    mtlLoader.setPath(cfg.modelsPath);
     //load pen
     mtlLoader.load('bovie.mtl', function(materials) {
         materials.preload();
         let objLoader = new THREE.OBJLoader();
         objLoader.setMaterials(materials);
-        objLoader.setPath("./assets/models/");
+        objLoader.setPath(cfg.modelsPath);
         objLoader.load('bovie.obj', function (object) {
-            object.scale.set(50, 50, 50);
+            object.scale.set(cfg.pensSize, cfg.pensSize, cfg.pensSize);
             object.position.set(0, 0, 0);
             object.rotation.set(Math.PI / 2.0, 10, 0);
             penObj.add(object);
@@ -114,6 +122,10 @@ window.onload = function () {
         endX: 0,
         endY: 0
     }
+    let penCoords = {
+        x: 0,
+        y: 0
+    }
     canvas.addEventListener("mousemove", mouse_move_handler);
     canvas.addEventListener("touchmove", touch_move_handler);
     canvas.addEventListener("mousedown", mouse_down_handler);
@@ -122,26 +134,25 @@ window.onload = function () {
     canvas.addEventListener("touchend", mouse_up_handler);
     
     function mouse_move_handler(e) {
-        //let k = (e.x + width * e.y);
-        if (!mouseObj.isDown) return;
-        let centerX = width / 2.0,
-            centerY = height / 2.0,
-            R = 200, //max pixel radius of pen moving
-            maxAngle = (28.0) * Math.PI / 180.0; //max angle of pen rotate in radians
-        
+        if (!mouseObj.isDown) return;        
         //training regime
         mouseObj.endX = mouseObj.startX;
         mouseObj.endY = mouseObj.startY;
         mouseObj.startX = e.x;
         mouseObj.startY = e.y;
-        let k = (e.x + width * e.y);
+        //calculate new potential coords of pen
+        let newPenCoordX = penCoords.x - (mouseObj.endX - mouseObj.startX);
+        let newPenCoordY = penCoords.y - (mouseObj.endY - mouseObj.startY);
+        //k - index in patternData
+        let k = (newPenCoordX + cfg.width * newPenCoordY);
         if (patternData[k] == 1) {
+            penCoords.x = newPenCoordX; penCoords.y = newPenCoordY;
             //caclulate rotation angle around y and x axises
-            let yAngle = maxAngle * mod((centerX - e.x) / R);
-            let xAngle = maxAngle * mod((e.y - centerY) / R);
+            let yAngle = cfg.maxAngle * mod((cfg.centerX - penCoords.x) / cfg.R);
+            let xAngle = cfg.maxAngle * mod((penCoords.y - cfg.centerY) / cfg.R);
             //angle correction based on non centered obj position
-            yAngle *= (e.x - centerX - penInitialParams.positionX) / (e.x - centerX);        
-            xAngle *= (e.y - centerY + penInitialParams.positionY) / (e.y - centerY);
+            yAngle *= (penCoords.x - cfg.centerX - penInitialParams.positionX) / (penCoords.x - cfg.centerX);        
+            xAngle *= (penCoords.y - cfg.centerY + penInitialParams.positionY) / (penCoords.y - cfg.centerY);
             
             penObj.rotation.y = -yAngle;
             penObj.rotation.x = xAngle;
@@ -160,27 +171,37 @@ window.onload = function () {
         */
     }
     function touch_move_handler(e) {
-        if (!mouseObj.isDown) return;
-        let centerX = width / 2.0,
-            centerY = height / 2.0,
-            R = 200, //max pixel radius of pen moving
-            maxAngle = (28.0) * Math.PI / 180.0; //max angle of pen rotate in radians
-        
-        //caclulate rotation angle around y and x axises
-        let yAngle = maxAngle * mod((centerX - e.touches[0].pageX) / R);
-        let xAngle = maxAngle * mod((e.touches[0].pageY - centerY) / R);
-        //angle correction based on non centered obj position
-        yAngle *= (e.touches[0].pageX - centerX - penInitialParams.positionX) / (e.touches[0].pageX - centerX);        
-        xAngle *= (e.touches[0].pageY - centerY + penInitialParams.positionY) / (e.touches[0].pageY - centerY);
-        
-        penObj.rotation.y = -yAngle;
-        penObj.rotation.x = xAngle;
+        if (!mouseObj.isDown) return;        
+        //training regime
+        mouseObj.endX = mouseObj.startX;
+        mouseObj.endY = mouseObj.startY;
+        mouseObj.startX = e.touches[0].pageX;
+        mouseObj.startY = e.touches[0].pageY;
+        //calculate new potential coords of pen
+        let newPenCoordX = penCoords.x - (mouseObj.endX - mouseObj.startX);
+        let newPenCoordY = penCoords.y - (mouseObj.endY - mouseObj.startY);
+        //k - index in patternData
+        let k = (newPenCoordX + cfg.width * newPenCoordY);
+        if (patternData[k] == 1) {
+            penCoords.x = newPenCoordX; penCoords.y = newPenCoordY;
+            //caclulate rotation angle around y and x axises
+            let yAngle = cfg.maxAngle * mod((cfg.centerX - penCoords.x) / cfg.R);
+            let xAngle = cfg.maxAngle * mod((penCoords.y - cfg.centerY) / cfg.R);
+            //angle correction based on non centered obj position
+            yAngle *= (penCoords.x - cfg.centerX - penInitialParams.positionX) / (penCoords.x - cfg.centerX);        
+            xAngle *= (penCoords.y - cfg.centerY + penInitialParams.positionY) / (penCoords.y - cfg.centerY);
+            
+            penObj.rotation.y = -yAngle;
+            penObj.rotation.x = xAngle;
+        }
     }
 
     function mouse_down_handler(e) {
         let eps = 10, //pixel gap to get the pen by its end
-            getPenX = width / 2.0 + penInitialParams.positionX, //coords of pen`s end
-            getPenY = 85;
+            getPenX = cfg.width / 2.0 + penInitialParams.positionX, //coords of pen`s end
+            getPenY = 75;
+        penCoords.x = getPenX;
+        penCoords.y = getPenY;
         if (Math.abs(e.x - getPenX) < eps && Math.abs(e.y - getPenY) < eps) {
             mouseObj.isDown = true;
             mouseObj.startX = e.x;
@@ -190,8 +211,10 @@ window.onload = function () {
 
     function touch_start_handler(e) {
         let eps = 10, //pixel gap to get the pen by its end
-            getPenX = width / 2.0 + penInitialParams.positionX, //coords of pen`s end
-            getPenY = 85;
+            getPenX = cfg.width / 2.0 + penInitialParams.positionX, //coords of pen`s end
+            getPenY = 75;
+        penCoords.x = getPenX;
+        penCoords.y = getPenY;
         if (Math.abs(e.touches[0].pageX - getPenX) < eps && Math.abs(e.touches[0].pageY - getPenY) < eps)
             mouseObj.isDown = true;
     }
