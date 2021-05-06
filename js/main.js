@@ -206,6 +206,7 @@ window.onload = function () {
         
         //mouseObj.startX = e.touches[0].pageX;
         //mouseObj.startY = e.touches[0].pageY;
+        document.getElementById('p').innerHTML = e.changedTouches[0].clientX + "/" + e.changedTouches[0].clientY;
         mouseObj.startX = e.changedTouches[0].clientX;
         mouseObj.startY = e.changedTouches[0].clientY;
         //calculate new potential coords of pen
@@ -219,7 +220,7 @@ window.onload = function () {
             if (obj[0]) {
                 newPenCoordX = obj[1];
                 newPenCoordY = obj[2];
-                movePen(newPenCoordX, newPenCoordY, cfg.R * 2);
+                movePen(newPenCoordX, newPenCoordY, cfg.R);
                 i = 10;
                 break;
             }
@@ -227,7 +228,7 @@ window.onload = function () {
             if (obj[0]) {
                 newPenCoordX = obj[1];
                 newPenCoordY = obj[2];
-                movePen(newPenCoordX, newPenCoordY, cfg.R * 2);
+                movePen(newPenCoordX, newPenCoordY, cfg.R);
                 i = 10;
                 break;
             }
