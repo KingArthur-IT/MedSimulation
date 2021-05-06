@@ -198,6 +198,7 @@ window.onload = function () {
         */
     }
     function touch_move_handler(e) {
+        e.preventDefault();
         if (!mouseObj.isDown) return;        
         //training regime
         mouseObj.endX = mouseObj.startX;
@@ -250,11 +251,14 @@ window.onload = function () {
         yAngle *= (penCoords.x - cfg.centerX - penInitialParams.positionX) / (penCoords.x - cfg.centerX);        
         xAngle *= (penCoords.y - cfg.centerY + penInitialParams.positionY) / (penCoords.y - cfg.centerY);
             
-        penObj.rotation.y = -yAngle;
-        penObj.rotation.x = xAngle;
+        if (!Number.isNaN(yAngle))
+            penObj.rotation.y = -yAngle;
+        if (!Number.isNaN(xAngle))
+            penObj.rotation.x = xAngle;
     }
 
     function mouse_down_handler(e) {
+        e.preventDefault();
         let eps = 10, //pixel gap to get the pen by its end
             getPenX = cfg.width / 2.0 + penInitialParams.positionX, //coords of pen`s end
             getPenY = 75;
