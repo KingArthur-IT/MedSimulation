@@ -128,7 +128,7 @@ window.onload = function () {
         y: 0
     }
     canvas.addEventListener("mousemove", mouse_move_handler);
-    window.addEventListener("touchmove", touch_move_handler);
+    canvas.addEventListener("touchmove", touch_move_handler);
     canvas.addEventListener("mousedown", mouse_down_handler);
     canvas.addEventListener("touchstart", touch_start_handler);
     canvas.addEventListener("mouseup", mouse_up_handler);
@@ -198,7 +198,7 @@ window.onload = function () {
         */
     }
     function touch_move_handler(e) {
-        //e.preventDefault();
+        e.preventDefault();
         if (!mouseObj.isDown) return;        
         //training regime
         mouseObj.endX = mouseObj.startX;
@@ -219,7 +219,7 @@ window.onload = function () {
             if (obj[0]) {
                 newPenCoordX = obj[1];
                 newPenCoordY = obj[2];
-                movePen(newPenCoordX, newPenCoordY, cfg.R);
+                movePen(newPenCoordX, newPenCoordY, cfg.R * 2);
                 i = 10;
                 break;
             }
@@ -227,7 +227,7 @@ window.onload = function () {
             if (obj[0]) {
                 newPenCoordX = obj[1];
                 newPenCoordY = obj[2];
-                movePen(newPenCoordX, newPenCoordY, cfg.R);
+                movePen(newPenCoordX, newPenCoordY, cfg.R * 2);
                 i = 10;
                 break;
             }
