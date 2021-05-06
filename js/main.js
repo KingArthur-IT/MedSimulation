@@ -137,6 +137,11 @@ window.onload = function () {
     function mouse_move_handler(e) {
         if (!mouseObj.isDown) return;        
         //training regime
+        /*
+        let mouseAngle = (mouseObj.endX - mouseObj.startX) * (e.x - mouseObj.endX) +
+            (mouseObj.endY - mouseObj.startY) * (e.y - mouseObj.endY);
+        console.log(Math.abs(mouseAngle) < 0.1);*/
+        //if (Math.abs(mouseAngle) == 0) { console.log('forbiden'); return;}
         mouseObj.endX = mouseObj.startX;
         mouseObj.endY = mouseObj.startY;
         mouseObj.startX = e.x;
@@ -144,6 +149,7 @@ window.onload = function () {
         //calculate new potential coords of pen
         let newPenCoordX = penCoords.x - (mouseObj.endX - mouseObj.startX);
         let newPenCoordY = penCoords.y - (mouseObj.endY - mouseObj.startY);
+
         //k - index in patternData
         let i = 0;
         do {
@@ -196,8 +202,11 @@ window.onload = function () {
         //training regime
         mouseObj.endX = mouseObj.startX;
         mouseObj.endY = mouseObj.startY;
-        mouseObj.startX = e.touches[0].pageX;
-        mouseObj.startY = e.touches[0].pageY;
+        
+        //mouseObj.startX = e.touches[0].pageX;
+        //mouseObj.startY = e.touches[0].pageY;
+        mouseObj.startX = e.changedTouches[0].clientX;
+        mouseObj.startY = e.changedTouches[0].clientY;
         //calculate new potential coords of pen
         let newPenCoordX = penCoords.x - (mouseObj.endX - mouseObj.startX);
         let newPenCoordY = penCoords.y - (mouseObj.endY - mouseObj.startY);
@@ -222,7 +231,7 @@ window.onload = function () {
                 break;
             }
             i += 1;
-        } while (i < 10);
+        } while (i < 10); 
     }
     function isRotatedPointInPath(startX, startY, endX, endY, angle) {
         let alfa = angle * Math.PI / 180.0;
@@ -264,7 +273,7 @@ window.onload = function () {
             getPenY = 75;
         penCoords.x = getPenX;
         penCoords.y = getPenY;
-        if (Math.abs(e.touches[0].pageX - getPenX) < eps && Math.abs(e.touches[0].pageY - getPenY) < eps)
+        if (Math.abs(e.changedTouches[0].clientX - getPenX) < eps && Math.abs(e.changedTouches[0].clientY - getPenY) < eps)
             mouseObj.isDown = true;
     }
     
