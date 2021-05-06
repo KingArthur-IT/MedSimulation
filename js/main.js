@@ -10,7 +10,7 @@ window.onload = function () {
         centerX: 425,
         centerY: 225,
         R: 200, //max pixel radius of pen moving
-        maxAngle: (26.0) * Math.PI / 180.0
+        maxAngle: (27.0) * Math.PI / 180.0
     }
     
     //unseen canvas to draw the pattern and get data from it
