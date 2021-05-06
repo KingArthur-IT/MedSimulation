@@ -128,7 +128,7 @@ window.onload = function () {
         y: 0
     }
     canvas.addEventListener("mousemove", mouse_move_handler);
-    canvas.addEventListener("touchmove", touch_move_handler);
+    window.addEventListener("touchmove", touch_move_handler);
     canvas.addEventListener("mousedown", mouse_down_handler);
     canvas.addEventListener("touchstart", touch_start_handler);
     canvas.addEventListener("mouseup", mouse_up_handler);
@@ -158,7 +158,7 @@ window.onload = function () {
             if (obj[0]) {
                 newPenCoordX = obj[1];
                 newPenCoordY = obj[2];
-                movePen(newPenCoordX, newPenCoordY);
+                movePen(newPenCoordX, newPenCoordY, cfg.R);
                 i = 10;
                 break;
             }
@@ -166,7 +166,7 @@ window.onload = function () {
             if (obj[0]) {
                 newPenCoordX = obj[1];
                 newPenCoordY = obj[2];
-                movePen(newPenCoordX, newPenCoordY);
+                movePen(newPenCoordX, newPenCoordY, cfg.R);
                 i = 10;
                 break;
             }
@@ -198,7 +198,7 @@ window.onload = function () {
         */
     }
     function touch_move_handler(e) {
-        e.preventDefault();
+        //e.preventDefault();
         if (!mouseObj.isDown) return;        
         //training regime
         mouseObj.endX = mouseObj.startX;
@@ -219,7 +219,7 @@ window.onload = function () {
             if (obj[0]) {
                 newPenCoordX = obj[1];
                 newPenCoordY = obj[2];
-                movePen(newPenCoordX, newPenCoordY);
+                movePen(newPenCoordX, newPenCoordY, cfg.R);
                 i = 10;
                 break;
             }
@@ -227,7 +227,7 @@ window.onload = function () {
             if (obj[0]) {
                 newPenCoordX = obj[1];
                 newPenCoordY = obj[2];
-                movePen(newPenCoordX, newPenCoordY);
+                movePen(newPenCoordX, newPenCoordY, cfg.R);
                 i = 10;
                 break;
             }
@@ -242,11 +242,11 @@ window.onload = function () {
         let k = (x + cfg.width * y); 
         return [(patternData[k] == 1), x, y];
     }
-    function movePen(newPenCoordX, newPenCoordY) {
+    function movePen(newPenCoordX, newPenCoordY, radius) {
         penCoords.x = newPenCoordX; penCoords.y = newPenCoordY;
         //caclulate rotation angle around y and x axises
-        let yAngle = cfg.maxAngle * mod((cfg.centerX - penCoords.x) / cfg.R);
-        let xAngle = cfg.maxAngle * mod((penCoords.y - cfg.centerY) / cfg.R);
+        let yAngle = cfg.maxAngle * mod((cfg.centerX - penCoords.x) / radius);
+        let xAngle = cfg.maxAngle * mod((penCoords.y - cfg.centerY) / radius);
         //angle correction based on non centered obj position
         yAngle *= (penCoords.x - cfg.centerX - penInitialParams.positionX) / (penCoords.x - cfg.centerX);        
         xAngle *= (penCoords.y - cfg.centerY + penInitialParams.positionY) / (penCoords.y - cfg.centerY);
