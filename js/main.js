@@ -6,11 +6,11 @@ window.onload = function () {
         pathSrc: './assets/img/path.png',
         bgSrc: './assets/img/interaction_bg.jpg',
         modelsPath: './assets/models/',
-        pensSize: 50,
+        penSize: 53,
         centerX: 425,
         centerY: 225,
         R: 200, //max pixel radius of pen moving
-        maxAngle: (27.0) * Math.PI / 180.0
+        maxAngle: (26.0) * Math.PI / 180.0
     }
     
     //unseen canvas to draw the pattern and get data from it
@@ -80,7 +80,7 @@ window.onload = function () {
         objLoader.setMaterials(materials);
         objLoader.setPath(cfg.modelsPath);
         objLoader.load('bovie.obj', function (object) {
-            object.scale.set(cfg.pensSize, cfg.pensSize, cfg.pensSize);
+            object.scale.set(cfg.penSize, cfg.penSize, cfg.penSize);
             object.position.set(0, 0, 0);
             object.rotation.set(Math.PI / 2.0, 10, 0);
             penObj.add(object);
