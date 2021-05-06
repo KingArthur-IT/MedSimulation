@@ -211,7 +211,7 @@ window.onload = function () {
         //calculate new potential coords of pen
         let newPenCoordX = penCoords.x - (mouseObj.endX - mouseObj.startX);
         let newPenCoordY = penCoords.y - (mouseObj.endY - mouseObj.startY);
-        document.getElementById('p').innerHTML = newPenCoordX + "//" + newPenCoordY;
+        document.getElementById('p').innerHTML = penCoords.x + "*" + mouseObj.endX + "*" + mouseObj.startX;
         //k - index in patternData
         let i = 0;
         do {
