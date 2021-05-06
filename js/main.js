@@ -66,7 +66,8 @@ window.onload = function () {
         transparent: true
     });    
     let mesh = new THREE.Mesh(patternPlane, material); 
-    mesh.position.z += 400;
+    //mesh.position.z += 400;
+    mesh.scale.set(1.6, 1.6, 1.6);
     scene.add(mesh);
 
     //objects
@@ -144,19 +145,39 @@ window.onload = function () {
         let newPenCoordX = penCoords.x - (mouseObj.endX - mouseObj.startX);
         let newPenCoordY = penCoords.y - (mouseObj.endY - mouseObj.startY);
         //k - index in patternData
+        let i = 0;
+        do {
+            let obj;
+            obj = isRotatedPointInPath(penCoords.x, penCoords.y, newPenCoordX, newPenCoordY, i * 10);
+            if (obj[0]) {
+                newPenCoordX = obj[1];
+                newPenCoordY = obj[2];
+                movePen(newPenCoordX, newPenCoordY);
+                i = 10;
+                break;
+            }
+            obj = isRotatedPointInPath(penCoords.x, penCoords.y, newPenCoordX, newPenCoordY, i * -10);
+            if (obj[0]) {
+                newPenCoordX = obj[1];
+                newPenCoordY = obj[2];
+                movePen(newPenCoordX, newPenCoordY);
+                i = 10;
+                break;
+            }
+            i += 1;
+        } while (i < 10);
+        /*
         let k = (newPenCoordX + cfg.width * newPenCoordY);
-        if (patternData[k] == 1) {
-            penCoords.x = newPenCoordX; penCoords.y = newPenCoordY;
-            //caclulate rotation angle around y and x axises
-            let yAngle = cfg.maxAngle * mod((cfg.centerX - penCoords.x) / cfg.R);
-            let xAngle = cfg.maxAngle * mod((penCoords.y - cfg.centerY) / cfg.R);
-            //angle correction based on non centered obj position
-            yAngle *= (penCoords.x - cfg.centerX - penInitialParams.positionX) / (penCoords.x - cfg.centerX);        
-            xAngle *= (penCoords.y - cfg.centerY + penInitialParams.positionY) / (penCoords.y - cfg.centerY);
+        if (patternData[k] == 1) movePen(newPenCoordX, newPenCoordY);
             
-            penObj.rotation.y = -yAngle;
-            penObj.rotation.x = xAngle;
-        }
+        else {
+            let obj = isRotatedPointInPath(penCoords.x, penCoords.y, newPenCoordX, newPenCoordY, 10);
+            if (obj[0]) {
+                newPenCoordX = obj[1];
+                newPenCoordY = obj[2];
+                movePen(newPenCoordX, newPenCoordY);
+            };
+        }   */  
             
         /*
         //caclulate rotation angle around y and x axises
@@ -181,19 +202,47 @@ window.onload = function () {
         let newPenCoordX = penCoords.x - (mouseObj.endX - mouseObj.startX);
         let newPenCoordY = penCoords.y - (mouseObj.endY - mouseObj.startY);
         //k - index in patternData
-        let k = (newPenCoordX + cfg.width * newPenCoordY);
-        if (patternData[k] == 1) {
-            penCoords.x = newPenCoordX; penCoords.y = newPenCoordY;
-            //caclulate rotation angle around y and x axises
-            let yAngle = cfg.maxAngle * mod((cfg.centerX - penCoords.x) / cfg.R);
-            let xAngle = cfg.maxAngle * mod((penCoords.y - cfg.centerY) / cfg.R);
-            //angle correction based on non centered obj position
-            yAngle *= (penCoords.x - cfg.centerX - penInitialParams.positionX) / (penCoords.x - cfg.centerX);        
-            xAngle *= (penCoords.y - cfg.centerY + penInitialParams.positionY) / (penCoords.y - cfg.centerY);
+        let i = 0;
+        do {
+            let obj;
+            obj = isRotatedPointInPath(penCoords.x, penCoords.y, newPenCoordX, newPenCoordY, i * 10);
+            if (obj[0]) {
+                newPenCoordX = obj[1];
+                newPenCoordY = obj[2];
+                movePen(newPenCoordX, newPenCoordY);
+                i = 10;
+                break;
+            }
+            obj = isRotatedPointInPath(penCoords.x, penCoords.y, newPenCoordX, newPenCoordY, i * -10);
+            if (obj[0]) {
+                newPenCoordX = obj[1];
+                newPenCoordY = obj[2];
+                movePen(newPenCoordX, newPenCoordY);
+                i = 10;
+                break;
+            }
+            i += 1;
+        } while (i < 10);
+    }
+    function isRotatedPointInPath(startX, startY, endX, endY, angle) {
+        let alfa = angle * Math.PI / 180.0;
+        let x = (endX - startX) * Math.cos(alfa) + (endY - startY) * Math.sin(alfa);
+        let y = (endY - startY) * Math.cos(alfa) - (endX - startX) * Math.sin(alfa);
+        x += startX; y += startY;
+        let k = (x + cfg.width * y); 
+        return [(patternData[k] == 1), x, y];
+    }
+    function movePen(newPenCoordX, newPenCoordY) {
+        penCoords.x = newPenCoordX; penCoords.y = newPenCoordY;
+        //caclulate rotation angle around y and x axises
+        let yAngle = cfg.maxAngle * mod((cfg.centerX - penCoords.x) / cfg.R);
+        let xAngle = cfg.maxAngle * mod((penCoords.y - cfg.centerY) / cfg.R);
+        //angle correction based on non centered obj position
+        yAngle *= (penCoords.x - cfg.centerX - penInitialParams.positionX) / (penCoords.x - cfg.centerX);        
+        xAngle *= (penCoords.y - cfg.centerY + penInitialParams.positionY) / (penCoords.y - cfg.centerY);
             
-            penObj.rotation.y = -yAngle;
-            penObj.rotation.x = xAngle;
-        }
+        penObj.rotation.y = -yAngle;
+        penObj.rotation.x = xAngle;
     }
 
     function mouse_down_handler(e) {
