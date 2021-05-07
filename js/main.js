@@ -148,21 +148,7 @@ window.onload = function () {
         x: 0,
         y: 0
     }
-    let crossroad = {
-        x1: 340,
-        y1: 215,
-        x2: 520,
-        y2: 215,
-        x3: 430,
-        y3: 80,
-        R: 15,
-        enterX1: 0,
-        enterY1: 0,
-        enterX2: 0,
-        enterY2: 0,
-        enterX3: 0,
-        enterY3: 0
-    }
+
     canvas.addEventListener("mousemove", mouse_move_handler);
     canvas.addEventListener("touchmove", touch_move_handler);
     canvas.addEventListener("mousedown", mouse_down_handler);
@@ -171,27 +157,22 @@ window.onload = function () {
     canvas.addEventListener("touchend", mouse_up_handler);
     
     function mouse_move_handler(e) {
-        document.body.style.cursor = 'default';
-        if (!mouseObj.isDown &&
-            Math.abs(e.x - cfg.width / 2.0 - penInitialParams.positionX) < 10 &&
-            Math.abs(e.y - 75) < 10)
-            document.body.style.cursor = 'pointer';
-        //console.log(e.x, e.y)
         if (!mouseObj.isDown) return;
-        //document.body.style.cursor = 'none';
-        //training regime
-        mouseObj.endX = mouseObj.startX;
-        mouseObj.endY = mouseObj.startY;
-        mouseObj.startX = e.x;
-        mouseObj.startY = e.y;
-        //calculate new potential coords of pen
-        let newPenCoordX = penCoords.x - (mouseObj.endX - mouseObj.startX);
-        let newPenCoordY = penCoords.y - (mouseObj.endY - mouseObj.startY);
-        //console.log(penCoords.x, penCoords.y)
+        let movementX = e.movementX ||
+            e.mozMovementX          ||
+            e.webkitMovementX       ||
+            0;
+        let movementY = e.movementY ||
+            e.mozMovementY      ||
+            e.webkitMovementY   ||
+            0;
+        let newPenCoordX = penCoords.x + movementX;
+        let newPenCoordY = penCoords.y + movementY;
+
         if (penCoords.x < 250 || penCoords.x > 550 || penCoords.y > 350) {
             changeIndex = true;
         }
-        if (penCoords.x > 415 && penCoords.x < 445 && penCoords.y < 90 && penCoords.y > 70 && changeIndex) {
+        if (penCoords.x > 370 && penCoords.x < 400 && penCoords.y < 120 && penCoords.y > 55 && changeIndex) {
             changeIndex = false;
             if (dataIndex == 0)
                 dataIndex = 1;
@@ -220,18 +201,7 @@ window.onload = function () {
             }
             i += 1;
         } while (i < 10);
-        /*
-        let k = (newPenCoordX + cfg.width * newPenCoordY);
-        if (patternData[k] == 1) movePen(newPenCoordX, newPenCoordY);
-            
-        else {
-            let obj = isRotatedPointInPath(penCoords.x, penCoords.y, newPenCoordX, newPenCoordY, 10);
-            if (obj[0]) {
-                newPenCoordX = obj[1];
-                newPenCoordY = obj[2];
-                movePen(newPenCoordX, newPenCoordY);
-            };
-        }   */  
+        
             
         /*
         //caclulate rotation angle around y and x axises
@@ -308,17 +278,17 @@ window.onload = function () {
     }
 
     function mouse_down_handler(e) {
-        e.preventDefault();
-        let eps = 10, //pixel gap to get the pen by its end
-            getPenX = cfg.width / 2.0 + penInitialParams.positionX, //coords of pen`s end
+        canvas.requestPointerLock = canvas.requestPointerLock ||
+                            canvas.mozRequestPointerLock ||
+                            canvas.webkitRequestPointerLock;
+        canvas.requestPointerLock()
+
+        let getPenX = cfg.width / 2.0 + penInitialParams.positionX, //coords of pen`s end
             getPenY = 75;
+            
         penCoords.x = getPenX;
         penCoords.y = getPenY;
-        if (Math.abs(e.x - getPenX) < eps && Math.abs(e.y - getPenY) < eps) {
-            mouseObj.isDown = true;
-            mouseObj.startX = e.x;
-            mouseObj.startY = e.y;
-        }
+        mouseObj.isDown = true;
     }
 
     function touch_start_handler(e) {
@@ -336,11 +306,30 @@ window.onload = function () {
     }
     
     function mouse_up_handler() {
-        mouseObj.isDown = false;
-        startPenObject();
-        crossroad.enterX1 = 0; crossroad.enterY1 = 0;
-        crossroad.enterX2 = 0; crossroad.enterY2 = 0;
-        crossroad.enterX3 = 0; crossroad.enterY3 = 0;
+        //mouseObj.isDown = false;
+        //startPenObject();
+    }
+
+    if ("onpointerlockchange" in document) {
+        document.addEventListener('pointerlockchange', lockChange, false);
+    } else if ("onmozpointerlockchange" in document) {
+        document.addEventListener('mozpointerlockchange', lockChange, false);
+        } else if ("onwebkitpointerlockchange" in document) {
+            document.addEventListener('webkitpointerlockchange', lockChange, false);
+            }
+
+    function lockChange() {
+        if(document.pointerLockElement === canvas ||
+        document.mozPointerLockElement === canvas ||
+        document.webkitPointerLockElement === canvas) {
+            console.log('The pointer lock status is now locked');
+            // Do something useful in response
+        } else {
+            console.log('The pointer lock status is now unlocked');
+            // Do something useful in response
+            mouseObj.isDown = false;
+            startPenObject();
+        }
     }
 
     function mod(x) { //x set -1 or 1 if it is out of interval [-1; 1] 
