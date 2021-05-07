@@ -204,17 +204,15 @@ window.onload = function () {
         mouseObj.endX = mouseObj.startX;
         mouseObj.endY = mouseObj.startY;
         
-        //mouseObj.startX = e.touches[0].pageX;
-        //mouseObj.startY = e.touches[0].pageY;
-        /*
-        if (!(Math.abs(mouseObj.endX - e.changedTouches[0].clientX) > 1 ||
-            Math.abs(mouseObj.endY - e.changedTouches[0].clientY) > 1)) return;*/
-        mouseObj.endX = e.changedTouches[0].clientX;
-        mouseObj.endY = e.changedTouches[0].clientY;
+        mouseObj.startX = e.touches[0].pageX;
+        mouseObj.startY = e.touches[0].pageY;
+
+        //mouseObj.endX = e.changedTouches[0].clientX;
+        //mouseObj.endY = e.changedTouches[0].clientY;
         //calculate new potential coords of pen
-        let newPenCoordX = penCoords.x + (mouseObj.endX - mouseObj.startX);
-        let newPenCoordY = penCoords.y + (mouseObj.endY - mouseObj.startY);
-        document.getElementById('p').innerHTML = penCoords.x + "-" + mouseObj.endX + "-" + mouseObj.startX;
+        let newPenCoordX = penCoords.x - (mouseObj.endX - mouseObj.startX);
+        let newPenCoordY = penCoords.y - (mouseObj.endY - mouseObj.startY);
+        //document.getElementById('p').innerHTML = penCoords.x + "-" + mouseObj.endX + "-" + mouseObj.startX;
         //k - index in patternData
         let i = 0;
         do {
@@ -281,10 +279,12 @@ window.onload = function () {
             getPenY = 75;
         penCoords.x = getPenX;
         penCoords.y = getPenY;
-        if (Math.abs(e.changedTouches[0].clientX - getPenX) < eps && Math.abs(e.changedTouches[0].clientY - getPenY) < eps)
+        if (Math.abs(e.touches[0].pageX - getPenX) < eps && Math.abs(e.touches[0].pageY - getPenY) < eps) {
             mouseObj.isDown = true;
-            mouseObj.startX = e.changedTouches[0].clientX;
-            mouseObj.startY = e.changedTouches[0].clientY;
+            mouseObj.startX = e.touches[0].pageX;
+            mouseObj.startY = e.touches[0].pageY;
+        }
+         console.log(getPenX, getPenY, mouseObj.isDown, e.touches[0].pageX, e.touches[0].pageY)   
     }
     
     function mouse_up_handler() {
