@@ -15,11 +15,13 @@ window.onload = function () {
     
     //unseen canvas to draw the pattern and get data from it
     let patternData = []; //data 850x450 of 0 and 1. where 0 - no path in coord, 1 - has path 
+    patternData.push(); patternData.push();
+    patternData[0] = []; patternData[1] = [];  let dataIndex = 0; let changeIndex = false;
     let patternCanvas = document.getElementById('patternCanvas');
     patternCanvas.setAttribute('width', cfg.width);
     patternCanvas.setAttribute('height', cfg.height);
     let patternCanvasContex = patternCanvas.getContext('2d');
-    let image = new Image(); image.src = cfg.pathSrc;
+    let image = new Image(); image.src = './assets/img/path1.png';
     image.onload = function () {
         patternCanvasContex.drawImage(image, 0, 0)
         //extended data array have color of each pixel in RGBA
@@ -30,12 +32,31 @@ window.onload = function () {
                 patternDataExtended[i + 1] == 0 &&
                 patternDataExtended[i + 2] == 0 &&
                 patternDataExtended[i + 3] == 0)
-                patternData.push(0);
-            else patternData.push(1);
+                patternData[0].push(0);
+            else patternData[0].push(1);
             i += 4;
         } while (i < patternDataExtended.length);
     };
-
+    let patternCanvas2 = document.getElementById('patternCanvas2');
+    patternCanvas2.setAttribute('width', cfg.width);
+    patternCanvas2.setAttribute('height', cfg.height);
+    let patternCanvasContex2 = patternCanvas2.getContext('2d');
+    let image2 = new Image(); image2.src = './assets/img/path2.png'; 
+    image2.onload = function () {
+        patternCanvasContex2.drawImage(image2, 0, 0)
+        //extended data array have color of each pixel in RGBA
+        let patternDataExtended = patternCanvasContex2.getImageData(0, 0, cfg.width, cfg.height).data;
+        let i = 0;
+        do {
+            if (patternDataExtended[i] == 0 && 
+                patternDataExtended[i + 1] == 0 &&
+                patternDataExtended[i + 2] == 0 &&
+                patternDataExtended[i + 3] == 0)
+                patternData[1].push(0);
+            else patternData[1].push(1);
+            i += 4;
+        } while (i < patternDataExtended.length);
+    };
     //main canvas to draw the scene
     let canvas = document.getElementById('canvas');
     canvas.setAttribute('width',  cfg.width);
@@ -127,6 +148,21 @@ window.onload = function () {
         x: 0,
         y: 0
     }
+    let crossroad = {
+        x1: 340,
+        y1: 215,
+        x2: 520,
+        y2: 215,
+        x3: 430,
+        y3: 80,
+        R: 15,
+        enterX1: 0,
+        enterY1: 0,
+        enterX2: 0,
+        enterY2: 0,
+        enterX3: 0,
+        enterY3: 0
+    }
     canvas.addEventListener("mousemove", mouse_move_handler);
     canvas.addEventListener("touchmove", touch_move_handler);
     canvas.addEventListener("mousedown", mouse_down_handler);
@@ -135,13 +171,15 @@ window.onload = function () {
     canvas.addEventListener("touchend", mouse_up_handler);
     
     function mouse_move_handler(e) {
-        if (!mouseObj.isDown) return;        
+        document.body.style.cursor = 'default';
+        if (!mouseObj.isDown &&
+            Math.abs(e.x - cfg.width / 2.0 - penInitialParams.positionX) < 10 &&
+            Math.abs(e.y - 75) < 10)
+            document.body.style.cursor = 'pointer';
+        //console.log(e.x, e.y)
+        if (!mouseObj.isDown) return;
+        //document.body.style.cursor = 'none';
         //training regime
-        /*
-        let mouseAngle = (mouseObj.endX - mouseObj.startX) * (e.x - mouseObj.endX) +
-            (mouseObj.endY - mouseObj.startY) * (e.y - mouseObj.endY);
-        console.log(Math.abs(mouseAngle) < 0.1);*/
-        //if (Math.abs(mouseAngle) == 0) { console.log('forbiden'); return;}
         mouseObj.endX = mouseObj.startX;
         mouseObj.endY = mouseObj.startY;
         mouseObj.startX = e.x;
@@ -149,6 +187,16 @@ window.onload = function () {
         //calculate new potential coords of pen
         let newPenCoordX = penCoords.x - (mouseObj.endX - mouseObj.startX);
         let newPenCoordY = penCoords.y - (mouseObj.endY - mouseObj.startY);
+        //console.log(penCoords.x, penCoords.y)
+        if (penCoords.x < 250 || penCoords.x > 550 || penCoords.y > 350) {
+            changeIndex = true;
+        }
+        if (penCoords.x > 415 && penCoords.x < 445 && penCoords.y < 90 && penCoords.y > 70 && changeIndex) {
+            changeIndex = false;
+            if (dataIndex == 0)
+                dataIndex = 1;
+            else dataIndex = 0;
+        }
 
         //k - index in patternData
         let i = 0;
@@ -242,7 +290,7 @@ window.onload = function () {
         let y = (endY - startY) * Math.cos(alfa) - (endX - startX) * Math.sin(alfa);
         x += startX; y += startY;
         let k = (x + cfg.width * y); 
-        return [(patternData[k] == 1), x, y];
+        return [(patternData[dataIndex][k] == 1), x, y];
     }
     function movePen(newPenCoordX, newPenCoordY, radius) {
         penCoords.x = newPenCoordX; penCoords.y = newPenCoordY;
@@ -290,6 +338,9 @@ window.onload = function () {
     function mouse_up_handler() {
         mouseObj.isDown = false;
         startPenObject();
+        crossroad.enterX1 = 0; crossroad.enterY1 = 0;
+        crossroad.enterX2 = 0; crossroad.enterY2 = 0;
+        crossroad.enterX3 = 0; crossroad.enterY3 = 0;
     }
 
     function mod(x) { //x set -1 or 1 if it is out of interval [-1; 1] 
