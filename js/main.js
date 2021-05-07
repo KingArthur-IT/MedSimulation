@@ -206,12 +206,14 @@ window.onload = function () {
         
         //mouseObj.startX = e.touches[0].pageX;
         //mouseObj.startY = e.touches[0].pageY;
+        if (!(Math.abs(mouseObj.endX - e.changedTouches[0].clientX) > 1 ||
+            Math.abs(mouseObj.endY - e.changedTouches[0].clientY) > 1)) return;
         mouseObj.startX = e.changedTouches[0].clientX;
         mouseObj.startY = e.changedTouches[0].clientY;
         //calculate new potential coords of pen
-        let newPenCoordX = penCoords.x - (mouseObj.endX - mouseObj.startX) * 10;
-        let newPenCoordY = penCoords.y - (mouseObj.endY - mouseObj.startY) * 10;
-        document.getElementById('p').innerHTML = penCoords.x + "-" + mouseObj.endX + "-" + mouseObj.startX;
+        let newPenCoordX = penCoords.x - (mouseObj.endX - mouseObj.startX);
+        let newPenCoordY = penCoords.y - (mouseObj.endY - mouseObj.startY);
+        //document.getElementById('p').innerHTML = penCoords.x + "-" + mouseObj.endX + "-" + mouseObj.startX;
         //k - index in patternData
         let i = 0;
         do {
