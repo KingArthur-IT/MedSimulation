@@ -49,7 +49,7 @@ window.onload = function () {
     let camera = new THREE.PerspectiveCamera(40.0, cfg.width / cfg.height, 0.1, 5000); 
     camera.position.set(0, 0, 1000);
     //light
-    let light = new THREE.AmbientLight(0xffffaa);
+    let light = new THREE.AmbientLight(0xffffff);
     scene.add(light);
     //Load background texture
     let loader = new THREE.TextureLoader();
@@ -210,8 +210,8 @@ window.onload = function () {
         //mouseObj.endX = e.changedTouches[0].clientX;
         //mouseObj.endY = e.changedTouches[0].clientY;
         //calculate new potential coords of pen
-        let newPenCoordX = penCoords.x - (mouseObj.endX - mouseObj.startX) * 7.0;
-        let newPenCoordY = penCoords.y - (mouseObj.endY - mouseObj.startY) * 7.0;
+        let newPenCoordX = penCoords.x - (mouseObj.endX - mouseObj.startX) * 9.0;
+        let newPenCoordY = penCoords.y - (mouseObj.endY - mouseObj.startY) * 9.0;
         //document.getElementById('p').innerHTML = penCoords.x + "-" + mouseObj.endX + "-" + mouseObj.startX;
         //k - index in patternData
         let i = 0;
