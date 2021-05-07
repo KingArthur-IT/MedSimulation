@@ -209,12 +209,12 @@ window.onload = function () {
         /*
         if (!(Math.abs(mouseObj.endX - e.changedTouches[0].clientX) > 1 ||
             Math.abs(mouseObj.endY - e.changedTouches[0].clientY) > 1)) return;*/
-        mouseObj.startX = e.changedTouches[0].clientX;
-        mouseObj.startY = e.changedTouches[0].clientY;
+        mouseObj.endX = e.changedTouches[0].clientX;
+        mouseObj.endY = e.changedTouches[0].clientY;
         //calculate new potential coords of pen
-        let newPenCoordX = penCoords.x - (mouseObj.endX - mouseObj.startX) * 1000;
-        let newPenCoordY = penCoords.y - (mouseObj.endY - mouseObj.startY) * 1000;
-        //document.getElementById('p').innerHTML = penCoords.x + "-" + mouseObj.endX + "-" + mouseObj.startX;
+        let newPenCoordX = penCoords.x + (mouseObj.endX - mouseObj.startX);
+        let newPenCoordY = penCoords.y + (mouseObj.endY - mouseObj.startY);
+        document.getElementById('p').innerHTML = penCoords.x + "-" + mouseObj.endX + "-" + mouseObj.startX;
         //k - index in patternData
         let i = 0;
         do {
@@ -283,6 +283,8 @@ window.onload = function () {
         penCoords.y = getPenY;
         if (Math.abs(e.changedTouches[0].clientX - getPenX) < eps && Math.abs(e.changedTouches[0].clientY - getPenY) < eps)
             mouseObj.isDown = true;
+            mouseObj.startX = e.changedTouches[0].clientX;
+            mouseObj.startY = e.changedTouches[0].clientY;
     }
     
     function mouse_up_handler() {
