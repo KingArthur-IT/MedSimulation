@@ -3,27 +3,43 @@ window.onload = function () {
     let cfg = {
         width: 850,
         height: 450,
-        pathSrc: './assets/img/path.png',
-        bgSrc: './assets/img/interaction_bg.jpg',
-        modelsPath: './assets/models/',
-        penSize: 53,
         centerX: 425,
         centerY: 225,
+        pathSrc: './assets/img/path.png',
+        trainingPath1Src: './assets/img/path1.png',
+        trainingPath2Src: './assets/img/path2.png',
+        bgSrc: './assets/img/interaction_bg.jpg',
+        modelsPath: './assets/models/',
+        penSize: 53,        
         R: 200, //max pixel radius of pen moving
         maxAngle: (26.0) * Math.PI / 180.0
     }
+    //mouse inforamation
+    let mouseObj = {
+        isDown: false,
+        startX: 0,
+        startY: 0,
+        endX:   0,
+        endY:   0
+    }
+    //coordinates of the pen
+    let penCoords = {
+        x: 0,
+        y: 0
+    }
     
-    //unseen canvas to draw the pattern and get data from it
+    //unseen canvases to draw the pattern and get data from it
     let patternData = []; //data 850x450 of 0 and 1. where 0 - no path in coord, 1 - has path 
     patternData.push(); patternData.push();
-    patternData[0] = []; patternData[1] = [];  let dataIndex = 0; let changeIndex = false;
-    let patternCanvas = document.getElementById('patternCanvas');
+    patternData[0] = []; patternData[1] = []; let dataIndex = 0; let changeIndex = false;
+    //get data from supportingCanvas
+    let patternCanvas = document.getElementById('supportingCanvas');
     patternCanvas.setAttribute('width', cfg.width);
     patternCanvas.setAttribute('height', cfg.height);
     let patternCanvasContex = patternCanvas.getContext('2d');
-    let image = new Image(); image.src = './assets/img/path1.png';
-    image.onload = function () {
-        patternCanvasContex.drawImage(image, 0, 0)
+    let imageOfPath1 = new Image(); imageOfPath1.src = cfg.trainingPath1Src;
+    imageOfPath1.onload = function () {
+        patternCanvasContex.drawImage(imageOfPath1, 0, 0)
         //extended data array have color of each pixel in RGBA
         let patternDataExtended = patternCanvasContex.getImageData(0, 0, cfg.width, cfg.height).data;
         let i = 0;
@@ -37,13 +53,14 @@ window.onload = function () {
             i += 4;
         } while (i < patternDataExtended.length);
     };
-    let patternCanvas2 = document.getElementById('patternCanvas2');
-    patternCanvas2.setAttribute('width', cfg.width);
-    patternCanvas2.setAttribute('height', cfg.height);
-    let patternCanvasContex2 = patternCanvas2.getContext('2d');
-    let image2 = new Image(); image2.src = './assets/img/path2.png'; 
-    image2.onload = function () {
-        patternCanvasContex2.drawImage(image2, 0, 0)
+    //get data from supportingCanvas2
+    let supportingCanvas2 = document.getElementById('supportingCanvas2');
+    supportingCanvas2.setAttribute('width', cfg.width);
+    supportingCanvas2.setAttribute('height', cfg.height);
+    let patternCanvasContex2 = supportingCanvas2.getContext('2d');
+    let imageOfPath2 = new Image(); imageOfPath2.src = cfg.trainingPath2Src; 
+    imageOfPath2.onload = function () {
+        patternCanvasContex2.drawImage(imageOfPath2, 0, 0)
         //extended data array have color of each pixel in RGBA
         let patternDataExtended = patternCanvasContex2.getImageData(0, 0, cfg.width, cfg.height).data;
         let i = 0;
@@ -57,6 +74,7 @@ window.onload = function () {
             i += 4;
         } while (i < patternDataExtended.length);
     };
+
     //main canvas to draw the scene
     let canvas = document.getElementById('canvas');
     canvas.setAttribute('width',  cfg.width);
@@ -86,10 +104,10 @@ window.onload = function () {
             texture.minFilter = THREE.LinearFilter; }),
         transparent: true
     });    
-    let mesh = new THREE.Mesh(patternPlane, material); 
-    //mesh.position.z += 400;
-    mesh.scale.set(1.6, 1.6, 1.6);
-    scene.add(mesh);
+    let patternPlaneMesh = new THREE.Mesh(patternPlane, material); 
+    //patternPlaneMesh.position.z += 400;
+    patternPlaneMesh.scale.set(1.6, 1.6, 1.6);
+    scene.add(patternPlaneMesh);
 
     //objects
     let penObj = new THREE.Object3D();
@@ -136,28 +154,37 @@ window.onload = function () {
     };
     loop();
         
-    //mouse
-    let mouseObj = {
-        isDown: false,
-        startX: 0,
-        startY: 0,
-        endX: 0,
-        endY: 0
-    }
-    let penCoords = {
-        x: 0,
-        y: 0
-    }
-
-    canvas.addEventListener("mousemove", mouse_move_handler);
-    canvas.addEventListener("touchmove", touch_move_handler);
-    canvas.addEventListener("mousedown", mouse_down_handler);
-    canvas.addEventListener("touchstart", touch_start_handler);
-    canvas.addEventListener("mouseup", mouse_up_handler);
-    canvas.addEventListener("touchend", mouse_up_handler);
+    //mouse, touch, lock change events
+    canvas.addEventListener("mousedown",    mouse_down_handler);
+    canvas.addEventListener("mousemove",    mouse_move_handler);
+    //canvas.addEventListener("mouseup",      mouse_up_handler);
     
+    canvas.addEventListener("touchstart",   touch_start_handler);
+    canvas.addEventListener("touchmove",    touch_move_handler);    
+    canvas.addEventListener("touchend",     touch_up_handler);
+    
+    if ("onpointerlockchange" in document) {
+        document.addEventListener('pointerlockchange', lockChange, false);
+    } else if ("onmozpointerlockchange" in document) {
+        document.addEventListener('mozpointerlockchange', lockChange, false);
+        } else if ("onwebkitpointerlockchange" in document) {
+            document.addEventListener('webkitpointerlockchange', lockChange, false);
+    };
+    
+    function mouse_down_handler(e) {
+        if (mouseObj.isDown) return;
+        canvas.requestPointerLock = canvas.requestPointerLock ||
+                            canvas.mozRequestPointerLock ||
+                            canvas.webkitRequestPointerLock;
+        canvas.requestPointerLock();
+        //coords of pen`s end
+        penCoords.x = cfg.width / 2.0 + penInitialParams.positionX;
+        penCoords.y = 75;
+        mouseObj.isDown = true;
+    }
     function mouse_move_handler(e) {
         if (!mouseObj.isDown) return;
+        //get movement of the mouse in lock API
         let movementX = e.movementX ||
             e.mozMovementX          ||
             e.webkitMovementX       ||
@@ -169,39 +196,37 @@ window.onload = function () {
         let newPenCoordX = penCoords.x + movementX;
         let newPenCoordY = penCoords.y + movementY;
 
+        //change index of the pattern data
         if (penCoords.x < 250 || penCoords.x > 550 || penCoords.y > 350) {
             changeIndex = true;
         }
         if (penCoords.x > 370 && penCoords.x < 400 && penCoords.y < 120 && penCoords.y > 55 && changeIndex) {
             changeIndex = false;
-            if (dataIndex == 0)
-                dataIndex = 1;
-            else dataIndex = 0;
+            dataIndex = dataIndex == 0 ? 1 : 0;
         }
 
-        //k - index in patternData
+        //find the possible position of the pen by rotating vector by (i*10) angle
         let i = 0;
         do {
-            let obj;
-            obj = isRotatedPointInPath(penCoords.x, penCoords.y, newPenCoordX, newPenCoordY, i * 10);
-            if (obj[0]) {
-                newPenCoordX = obj[1];
-                newPenCoordY = obj[2];
+            let rotatedCoords;
+            rotatedCoords = isRotatedPointInPath(penCoords.x, penCoords.y, newPenCoordX, newPenCoordY, i * 10);
+            if (rotatedCoords[0]) {
+                newPenCoordX = rotatedCoords[1];
+                newPenCoordY = rotatedCoords[2];
                 movePen(newPenCoordX, newPenCoordY, cfg.R);
                 i = 10;
                 break;
             }
-            obj = isRotatedPointInPath(penCoords.x, penCoords.y, newPenCoordX, newPenCoordY, i * -10);
-            if (obj[0]) {
-                newPenCoordX = obj[1];
-                newPenCoordY = obj[2];
+            rotatedCoords = isRotatedPointInPath(penCoords.x, penCoords.y, newPenCoordX, newPenCoordY, i * -10);
+            if (rotatedCoords[0]) {
+                newPenCoordX = rotatedCoords[1];
+                newPenCoordY = rotatedCoords[2];
                 movePen(newPenCoordX, newPenCoordY, cfg.R);
                 i = 10;
                 break;
             }
             i += 1;
         } while (i < 10);
-        
             
         /*
         //caclulate rotation angle around y and x axises
@@ -214,6 +239,34 @@ window.onload = function () {
         penObj.rotation.y = -yAngle;
         penObj.rotation.x = xAngle;
         */
+    }
+    function lockChange() {
+        if(document.pointerLockElement === canvas ||
+        document.mozPointerLockElement === canvas ||
+        document.webkitPointerLockElement === canvas) {
+            console.log('The pointer lock status is now locked');
+            // Do something 
+        } else {
+            console.log('The pointer lock status is now unlocked');
+            // Do something 
+            mouseObj.isDown = false;
+            startPenObject();
+            dataIndex = 0;
+        }
+    }
+
+    function touch_start_handler(e) {
+        let eps = 10, //pixel gap to get the pen by its end
+            getPenX = cfg.width / 2.0 + penInitialParams.positionX, //coords of pen`s end
+            getPenY = 75;
+        penCoords.x = getPenX;
+        penCoords.y = getPenY;
+        if (Math.abs(e.touches[0].pageX - getPenX) < eps && Math.abs(e.touches[0].pageY - getPenY) < eps) {
+            mouseObj.isDown = true;
+            mouseObj.startX = e.touches[0].pageX;
+            mouseObj.startY = e.touches[0].pageY;
+        }
+         console.log(getPenX, getPenY, mouseObj.isDown, e.touches[0].pageX, e.touches[0].pageY)   
     }
     function touch_move_handler(e) {
         e.preventDefault();
@@ -254,14 +307,25 @@ window.onload = function () {
             i += 1;
         } while (i < 10); 
     }
+    function touch_up_handler() {
+        //mouseObj.isDown = false;
+        //startPenObject();
+    }       
+
+    //set of functions
+    function mod(x) { //x set -1 or 1 if it is out of interval [-1; 1] 
+        return Math.abs(x) > 1 ? 1.0 * x / Math.abs(x) : x;
+    }
+    //rotate the vector by the angle and return x,y - end of the new vector
     function isRotatedPointInPath(startX, startY, endX, endY, angle) {
         let alfa = angle * Math.PI / 180.0;
         let x = (endX - startX) * Math.cos(alfa) + (endY - startY) * Math.sin(alfa);
         let y = (endY - startY) * Math.cos(alfa) - (endX - startX) * Math.sin(alfa);
         x += startX; y += startY;
-        let k = (x + cfg.width * y); 
+        let k = (x + cfg.width * y); //index in data
         return [(patternData[dataIndex][k] == 1), x, y];
     }
+    //get the rotation angles by the moving coords and rotate the pen
     function movePen(newPenCoordX, newPenCoordY, radius) {
         penCoords.x = newPenCoordX; penCoords.y = newPenCoordY;
         //caclulate rotation angle around y and x axises
@@ -275,64 +339,5 @@ window.onload = function () {
             penObj.rotation.y = -yAngle;
         if (!Number.isNaN(xAngle))
             penObj.rotation.x = xAngle;
-    }
-
-    function mouse_down_handler(e) {
-        canvas.requestPointerLock = canvas.requestPointerLock ||
-                            canvas.mozRequestPointerLock ||
-                            canvas.webkitRequestPointerLock;
-        canvas.requestPointerLock()
-
-        let getPenX = cfg.width / 2.0 + penInitialParams.positionX, //coords of pen`s end
-            getPenY = 75;
-            
-        penCoords.x = getPenX;
-        penCoords.y = getPenY;
-        mouseObj.isDown = true;
-    }
-
-    function touch_start_handler(e) {
-        let eps = 10, //pixel gap to get the pen by its end
-            getPenX = cfg.width / 2.0 + penInitialParams.positionX, //coords of pen`s end
-            getPenY = 75;
-        penCoords.x = getPenX;
-        penCoords.y = getPenY;
-        if (Math.abs(e.touches[0].pageX - getPenX) < eps && Math.abs(e.touches[0].pageY - getPenY) < eps) {
-            mouseObj.isDown = true;
-            mouseObj.startX = e.touches[0].pageX;
-            mouseObj.startY = e.touches[0].pageY;
-        }
-         console.log(getPenX, getPenY, mouseObj.isDown, e.touches[0].pageX, e.touches[0].pageY)   
-    }
-    
-    function mouse_up_handler() {
-        //mouseObj.isDown = false;
-        //startPenObject();
-    }
-
-    if ("onpointerlockchange" in document) {
-        document.addEventListener('pointerlockchange', lockChange, false);
-    } else if ("onmozpointerlockchange" in document) {
-        document.addEventListener('mozpointerlockchange', lockChange, false);
-        } else if ("onwebkitpointerlockchange" in document) {
-            document.addEventListener('webkitpointerlockchange', lockChange, false);
-            }
-
-    function lockChange() {
-        if(document.pointerLockElement === canvas ||
-        document.mozPointerLockElement === canvas ||
-        document.webkitPointerLockElement === canvas) {
-            console.log('The pointer lock status is now locked');
-            // Do something useful in response
-        } else {
-            console.log('The pointer lock status is now unlocked');
-            // Do something useful in response
-            mouseObj.isDown = false;
-            startPenObject();
-        }
-    }
-
-    function mod(x) { //x set -1 or 1 if it is out of interval [-1; 1] 
-        return Math.abs(x) > 1 ? 1.0 * x / Math.abs(x) : x;
     }
 }
