@@ -171,7 +171,7 @@ window.onload = function () {
             document.addEventListener('webkitpointerlockchange', lockChange, false);
     };
     
-    function mouse_down_handler(e) {
+    function mouse_down_handler() {
         if (mouseObj.isDown) return;
         canvas.requestPointerLock = canvas.requestPointerLock ||
                             canvas.mozRequestPointerLock ||
@@ -266,7 +266,6 @@ window.onload = function () {
             mouseObj.startX = e.touches[0].pageX;
             mouseObj.startY = e.touches[0].pageY;
         }
-         console.log(getPenX, getPenY, mouseObj.isDown, e.touches[0].pageX, e.touches[0].pageY)   
     }
     function touch_move_handler(e) {
         e.preventDefault();
@@ -281,25 +280,33 @@ window.onload = function () {
         //mouseObj.endX = e.changedTouches[0].clientX;
         //mouseObj.endY = e.changedTouches[0].clientY;
         //calculate new potential coords of pen
-        let newPenCoordX = penCoords.x - (mouseObj.endX - mouseObj.startX) * 9.0;
-        let newPenCoordY = penCoords.y - (mouseObj.endY - mouseObj.startY) * 9.0;
-        //document.getElementById('p').innerHTML = penCoords.x + "-" + mouseObj.endX + "-" + mouseObj.startX;
+        let newPenCoordX = e.touches[0].pageX;//penCoords.x - (mouseObj.endX - mouseObj.startX) * 10.0;
+        let newPenCoordY = e.touches[0].pageY;//penCoords.y - (mouseObj.endY - mouseObj.startY) * 10.0;
+
+        //change index of the pattern data
+        if (penCoords.x < 250 || penCoords.x > 550 || penCoords.y > 350) {
+            changeIndex = true;
+        }
+        if (penCoords.x > 370 && penCoords.x < 400 && penCoords.y < 120 && penCoords.y > 55 && changeIndex) {
+            changeIndex = false;
+            dataIndex = dataIndex == 0 ? 1 : 0;
+        }
         //k - index in patternData
         let i = 0;
         do {
-            let obj;
-            obj = isRotatedPointInPath(penCoords.x, penCoords.y, newPenCoordX, newPenCoordY, i * 10);
-            if (obj[0]) {
-                newPenCoordX = obj[1];
-                newPenCoordY = obj[2];
+            let rotatedCoords;
+            rotatedCoords = isRotatedPointInPath(penCoords.x, penCoords.y, newPenCoordX, newPenCoordY, i * 10);
+            if (rotatedCoords[0]) {
+                newPenCoordX = rotatedCoords[1];
+                newPenCoordY = rotatedCoords[2];
                 movePen(newPenCoordX, newPenCoordY, cfg.R);
                 i = 10;
                 break;
             }
-            obj = isRotatedPointInPath(penCoords.x, penCoords.y, newPenCoordX, newPenCoordY, i * -10);
-            if (obj[0]) {
-                newPenCoordX = obj[1];
-                newPenCoordY = obj[2];
+            rotatedCoords = isRotatedPointInPath(penCoords.x, penCoords.y, newPenCoordX, newPenCoordY, i * -10);
+            if (rotatedCoords[0]) {
+                newPenCoordX = rotatedCoords[1];
+                newPenCoordY = rotatedCoords[2];
                 movePen(newPenCoordX, newPenCoordY, cfg.R);
                 i = 10;
                 break;
@@ -308,8 +315,9 @@ window.onload = function () {
         } while (i < 10); 
     }
     function touch_up_handler() {
-        //mouseObj.isDown = false;
-        //startPenObject();
+        mouseObj.isDown = false;
+        startPenObject();
+        dataIndex = 0;
     }       
 
     //set of functions
