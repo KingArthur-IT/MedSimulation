@@ -12,7 +12,8 @@ window.onload = function () {
         modelsPath: './assets/models/',
         penSize: 53,        
         R: 200, //max pixel radius of pen moving
-        maxAngle: (26.0) * Math.PI / 180.0
+        maxAngle: (26.0) * Math.PI / 180.0,
+        touchStep: 3
     }
     //mouse inforamation
     let mouseObj = {
@@ -292,8 +293,8 @@ window.onload = function () {
         //mouseObj.endX = e.changedTouches[0].clientX;
         //mouseObj.endY = e.changedTouches[0].clientY;
         //calculate new potential coords of pen
-        let newPenCoordX = penCoords.x - 10.0*(mouseObj.endX - mouseObj.startX) / Math.abs(mouseObj.endX - mouseObj.startX);
-        let newPenCoordY = penCoords.y - 10.0*(mouseObj.endY - mouseObj.startY) / Math.abs(mouseObj.endY - mouseObj.startY);
+        let newPenCoordX = penCoords.x - cfg.touchStep*(mouseObj.endX - mouseObj.startX) / Math.abs(mouseObj.endX - mouseObj.startX);
+        let newPenCoordY = penCoords.y - cfg.touchStep*(mouseObj.endY - mouseObj.startY) / Math.abs(mouseObj.endY - mouseObj.startY);
 
         //change index of the pattern data
         if (penCoords.x < 250 || penCoords.x > 550 || penCoords.y > 350) {
