@@ -271,17 +271,18 @@ window.onload = function () {
         e.preventDefault();
         if (!mouseObj.isDown) return;        
         //training regime
+        /*
         mouseObj.endX = mouseObj.startX;
         mouseObj.endY = mouseObj.startY;
         
         mouseObj.startX = e.touches[0].pageX;
-        mouseObj.startY = e.touches[0].pageY;
+        mouseObj.startY = e.touches[0].pageY;*/
 
         //mouseObj.endX = e.changedTouches[0].clientX;
         //mouseObj.endY = e.changedTouches[0].clientY;
         //calculate new potential coords of pen
-        let newPenCoordX = e.touches[0].pageX;//penCoords.x - (mouseObj.endX - mouseObj.startX) * 10.0;
-        let newPenCoordY = e.touches[0].pageY;//penCoords.y - (mouseObj.endY - mouseObj.startY) * 10.0;
+        let newPenCoordX = penCoords.x - (mouseObj.startX - e.touches[0].pageX);//(mouseObj.endX - mouseObj.startX) * 10.0;
+        let newPenCoordY = penCoords.y - (mouseObj.startY - e.touches[0].pageY);//(mouseObj.endY - mouseObj.startY) * 10.0;
 
         //change index of the pattern data
         if (penCoords.x < 250 || penCoords.x > 550 || penCoords.y > 350) {
@@ -297,6 +298,8 @@ window.onload = function () {
             let rotatedCoords;
             rotatedCoords = isRotatedPointInPath(penCoords.x, penCoords.y, newPenCoordX, newPenCoordY, i * 10);
             if (rotatedCoords[0]) {
+                mouseObj.startX = e.touches[0].pageX;
+                mouseObj.startY = e.touches[0].pageY;
                 newPenCoordX = rotatedCoords[1];
                 newPenCoordY = rotatedCoords[2];
                 movePen(newPenCoordX, newPenCoordY, cfg.R);
@@ -305,6 +308,8 @@ window.onload = function () {
             }
             rotatedCoords = isRotatedPointInPath(penCoords.x, penCoords.y, newPenCoordX, newPenCoordY, i * -10);
             if (rotatedCoords[0]) {
+                mouseObj.startX = e.touches[0].pageX;
+                mouseObj.startY = e.touches[0].pageY;
                 newPenCoordX = rotatedCoords[1];
                 newPenCoordY = rotatedCoords[2];
                 movePen(newPenCoordX, newPenCoordY, cfg.R);
