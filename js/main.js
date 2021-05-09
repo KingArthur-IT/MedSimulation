@@ -146,9 +146,17 @@ window.onload = function () {
         penObj.position.z = penInitialParams.positionZ;        
     }; 
     startPenObject();
-    
+
+    //trajectory line
+    const trajectoryMaterial = new THREE.LineDashedMaterial({ color: 0x0000ff });
+    let trajectoryPoints = [];
+
     //main render loop
     function loop() {
+        let trajectoryGeometry = new THREE.BufferGeometry().setFromPoints(trajectoryPoints);
+        let trajectoryLine = new THREE.Line(trajectoryGeometry, trajectoryMaterial);
+        scene.add(trajectoryLine);
+        
         renderer.render(scene, camera);
         requestAnimationFrame(loop)
     };
@@ -183,7 +191,7 @@ window.onload = function () {
         mouseObj.isDown = true;
     }
     function mouse_move_handler(e) {
-        if (!mouseObj.isDown) return;
+        if (!mouseObj.isDown) return; 
         //get movement of the mouse in lock API
         let movementX = e.movementX ||
             e.mozMovementX          ||
@@ -229,6 +237,9 @@ window.onload = function () {
         } while (i < 10);
             
         /*
+        //let lineX = 640.0*(penCoords.x - 0.5 * cfg.width) / (0.5 * cfg.width);
+                //let lineY = -365.0*(penCoords.y - 0.5 * cfg.height) / (0.5 * cfg.height);
+                //trajectoryPoints.push( new THREE.Vector3( lineX, lineY, 0 ) );
         //caclulate rotation angle around y and x axises
         let yAngle = maxAngle * mod((centerX - e.x) / R);
         let xAngle = maxAngle * mod((e.y - centerY) / R);
@@ -281,8 +292,8 @@ window.onload = function () {
         //mouseObj.endX = e.changedTouches[0].clientX;
         //mouseObj.endY = e.changedTouches[0].clientY;
         //calculate new potential coords of pen
-        let newPenCoordX = penCoords.x - (mouseObj.startX - e.touches[0].pageX);//(mouseObj.endX - mouseObj.startX) * 10.0;
-        let newPenCoordY = penCoords.y - (mouseObj.startY - e.touches[0].pageY);//(mouseObj.endY - mouseObj.startY) * 10.0;
+        let newPenCoordX = penCoords.x - (mouseObj.startX - e.touches[0].pageX) * 7.0;//(mouseObj.endX - mouseObj.startX) * 10.0;
+        let newPenCoordY = penCoords.y - (mouseObj.startY - e.touches[0].pageY) * 7.0;//(mouseObj.endY - mouseObj.startY) * 10.0;
 
         //change index of the pattern data
         if (penCoords.x < 250 || penCoords.x > 550 || penCoords.y > 350) {
