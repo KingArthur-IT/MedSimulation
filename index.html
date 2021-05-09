@@ -18,10 +18,25 @@
       #supportingCanvas, #supportingCanvas2 {
         display: none;
       }
+      #stageBtn{
+        position: absolute;
+        top: 400px;
+        left: 670px;
+        padding: 1%;
+        background-color: transparent;
+        font-size: 14px;
+        font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+        cursor: pointer;
+        color: rgb(50, 50, 50);
+        border: 1px solid rgba(50,50,50,0.3);
+        box-shadow: 1px 0px 0px 0px rgba(50,50,50,0.3);
+        display: none;
+      }
     </style>
   </head>
   <body>
     <canvas id="canvas"></canvas>
+    <input type="button" value="Перейти к практике" id="stageBtn">
     <canvas id="supportingCanvas"></canvas>
     <canvas id="supportingCanvas2"></canvas>
     <script src="./js/three.js"></script>
