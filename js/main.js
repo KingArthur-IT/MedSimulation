@@ -14,7 +14,7 @@ window.onload = function () {
         R: 200, //max pixel radius of pen moving
         maxAngle: (26.0) * Math.PI / 180.0,
         touchStep: 5,
-        maxParticlesInTrace: 100
+        maxParticlesInTrace: 200
     }
     //mouse inforamation
     let mouseObj = {
@@ -154,27 +154,51 @@ window.onload = function () {
     }; 
     startPenObject();
 
-    //trajectory line
-    let trajectoryMaterial = new THREE.LineBasicMaterial({   color: 0xffff00});
-    let trajectoryPoints = [];
-    let trajectoryGeometry = new THREE.BufferGeometry().setFromPoints(trajectoryPoints);
-    let trajectoryLine = new THREE.Line(trajectoryGeometry, trajectoryMaterial);
-    //trajectoryPoints.push( new THREE.Vector3( 270, 0, 600 ) );
-    //trajectoryPoints.push( new THREE.Vector3( 0, 0, 600 ) );
-        
-    //main render loop
+    //trajectory line    
+    let trajectoryMaterial = new THREE.LineBasicMaterial({color: 0xff00ff});
+    let trajectoryPoints = []; let trajectoryPointsTime = [];
+    let trajectoryPoints2 = []; let trajectoryPoints3 = []; let trajectoryPoints4 = [];
+    //let curve;   let curvePoints;
+    let trajectoryGeometry;
+    let trajectoryGeometry2;
+    let trajectoryGeometry3;
+    let trajectoryGeometry4;
+    let splineObject;
+    let splineObject2;
+    let splineObject3;
+    let splineObject4;
+
+    //-----------------main render loop-------------------------
     function loop() {
-        scene.remove(trajectoryLine)
-        trajectoryGeometry = new THREE.BufferGeometry().setFromPoints(trajectoryPoints);
-        trajectoryLine = new THREE.Line(trajectoryGeometry, trajectoryMaterial);        
-        scene.add(trajectoryLine);
-        
+        if (stages.practice) {                   
+            let time = new Date;
+            if (time - trajectoryPointsTime[0] > 5000 && trajectoryPoints.length > 0) {
+                trajectoryPoints.shift(); trajectoryPointsTime.shift();
+                trajectoryPoints2.shift();  trajectoryPoints3.shift();  trajectoryPoints4.shift();
+            }
+            scene.remove(splineObject); scene.remove(splineObject2)
+            scene.remove(splineObject3); scene.remove(splineObject4)
+            //curve = new THREE.CatmullRomCurve3(trajectoryPoints);
+            //curvePoints = curve.getPoints(100);
+            trajectoryGeometry = new THREE.BufferGeometry().setFromPoints(trajectoryPoints);
+            trajectoryGeometry2 = new THREE.BufferGeometry().setFromPoints(trajectoryPoints2);
+            trajectoryGeometry3 = new THREE.BufferGeometry().setFromPoints(trajectoryPoints3);
+            trajectoryGeometry4 = new THREE.BufferGeometry().setFromPoints(trajectoryPoints4);
+            splineObject = new THREE.Line(trajectoryGeometry, trajectoryMaterial);
+            splineObject2 = new THREE.Line(trajectoryGeometry2, trajectoryMaterial);
+            splineObject3 = new THREE.Line(trajectoryGeometry3, trajectoryMaterial);
+            splineObject4 = new THREE.Line(trajectoryGeometry4, trajectoryMaterial);
+            scene.add(splineObject);
+            scene.add(splineObject2);
+            scene.add(splineObject3);
+            scene.add(splineObject4);
+        }
         renderer.render(scene, camera);
         requestAnimationFrame(loop)
     };
     loop();
         
-    //mouse, touch, lock change events
+    //---------------mouse, touch, lock change events------------------
     canvas.addEventListener("mousedown",    mouse_down_handler);
     canvas.addEventListener("mousemove",    mouse_move_handler);
     //canvas.addEventListener("mouseup",      mouse_up_handler);
@@ -192,15 +216,28 @@ window.onload = function () {
     };
     
     function mouse_down_handler() {
-        if (mouseObj.isDown) return;
-        canvas.requestPointerLock = canvas.requestPointerLock ||
-                            canvas.mozRequestPointerLock ||
-                            canvas.webkitRequestPointerLock;
-        canvas.requestPointerLock();
-        //coords of pen`s end
-        penCoords.x = cfg.width / 2.0 + penInitialParams.positionX;
-        penCoords.y = 75;
-        mouseObj.isDown = true;
+        if (!mouseObj.isDown) {//lock and start
+            canvas.requestPointerLock = canvas.requestPointerLock ||
+                canvas.mozRequestPointerLock ||
+                canvas.webkitRequestPointerLock;
+            canvas.requestPointerLock();
+            //coords of pen`s end
+            penCoords.x = cfg.width / 2.0 + penInitialParams.positionX;
+            penCoords.y = 75;
+            mouseObj.isDown = true;
+        }
+        else { //unlock
+            document.exitPointerLock = document.exitPointerLock    ||
+                           document.mozExitPointerLock ||
+                           document.webkitExitPointerLock;
+            document.exitPointerLock();
+            mouseObj.isDown = false;
+            startPenObject();
+            dataIndex = 0;
+            trajectoryPoints.length = 0; trajectoryPoints2.length = 0;
+            trajectoryPoints3.length = 0; trajectoryPoints4.length = 0;
+            trajectoryPointsTime.length = 0;
+        }
     }
     function mouse_move_handler(e) {
         if (!mouseObj.isDown) return; 
@@ -256,8 +293,10 @@ window.onload = function () {
             let lineX = 280.0*(penCoords.x - 0.5 * cfg.width) / (0.5 * cfg.width);
             let lineY = -150.0 * (penCoords.y - 0.5 * cfg.height) / (0.5 * cfg.height);
             trajectoryPoints.push(new THREE.Vector3(lineX, lineY, 600));
-            if (trajectoryPoints.length > cfg.maxParticlesInTrace)
-                trajectoryPoints.shift();
+            trajectoryPoints2.push(new THREE.Vector3(lineX, lineY + 0.5, 600));
+            trajectoryPoints3.push(new THREE.Vector3(lineX, lineY - 0.5, 600));
+            trajectoryPoints4.push(new THREE.Vector3(lineX - 0.5, lineY, 600));
+            trajectoryPointsTime.push(new Date);
         }//if (stages.practice) 
     }
     function lockChange() {
@@ -265,14 +304,16 @@ window.onload = function () {
         document.mozPointerLockElement === canvas ||
         document.webkitPointerLockElement === canvas) {
             console.log('The pointer lock status is now locked');
-            // Do something 
         } else {
             console.log('The pointer lock status is now unlocked');
-            // Do something 
             mouseObj.isDown = false;
             startPenObject();
             dataIndex = 0;
             trajectoryPoints.length = 0;
+            trajectoryPoints2.length = 0;
+            trajectoryPoints3.length = 0;
+            trajectoryPoints4.length = 0;
+            trajectoryPointsTime.length = 0;
         }
     }
 
@@ -378,4 +419,5 @@ window.onload = function () {
         if (!Number.isNaN(xAngle))
             penObj.rotation.x = xAngle;
     }
+
 }
