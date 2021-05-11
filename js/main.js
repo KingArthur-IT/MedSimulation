@@ -250,53 +250,13 @@ window.onload = function () {
             e.mozMovementY      ||
             e.webkitMovementY   ||
             0;
-        let newPenCoordX = penCoords.x + movementX;
-        let newPenCoordY = penCoords.y + movementY;
-
+        
         //training mode
         if (stages.training) {
-            //change index of the pattern data
-            if (penCoords.x < 250 || penCoords.x > 550 || penCoords.y > 350) {
-                changeIndex = true;
-            }
-            if (penCoords.x > 370 && penCoords.x < 400 && penCoords.y < 120 && penCoords.y > 55 && changeIndex) {
-                changeIndex = false;
-                dataIndex = dataIndex == 0 ? 1 : 0;
-            }
-
-            //find the possible position of the pen by rotating vector by (i*10) angle
-            let i = 0;
-            do {
-                let rotatedCoords;
-                rotatedCoords = isRotatedPointInPath(penCoords.x, penCoords.y, newPenCoordX, newPenCoordY, i * 10);
-                if (rotatedCoords[0]) {
-                    newPenCoordX = rotatedCoords[1];
-                    newPenCoordY = rotatedCoords[2];
-                    movePen(newPenCoordX, newPenCoordY, cfg.R);
-                    i = 10;
-                    break;
-                }
-                rotatedCoords = isRotatedPointInPath(penCoords.x, penCoords.y, newPenCoordX, newPenCoordY, i * -10);
-                if (rotatedCoords[0]) {
-                    newPenCoordX = rotatedCoords[1];
-                    newPenCoordY = rotatedCoords[2];
-                    movePen(newPenCoordX, newPenCoordY, cfg.R);
-                    i = 10;
-                    break;
-                }
-                i += 1;
-            } while (i < 10);
+            trainingStage(movementX, movementY);
         };//if (stages.training)
         if (stages.practice) {
-            movePen(newPenCoordX, newPenCoordY, cfg.R);
-            //draw line 
-            let lineX = 280.0*(penCoords.x - 0.5 * cfg.width) / (0.5 * cfg.width);
-            let lineY = -150.0 * (penCoords.y - 0.5 * cfg.height) / (0.5 * cfg.height);
-            trajectoryPoints.push(new THREE.Vector3(lineX, lineY, 600));
-            trajectoryPoints2.push(new THREE.Vector3(lineX, lineY + 0.5, 600));
-            trajectoryPoints3.push(new THREE.Vector3(lineX, lineY - 0.5, 600));
-            trajectoryPoints4.push(new THREE.Vector3(lineX - 0.5, lineY, 600));
-            trajectoryPointsTime.push(new Date);
+            practiceStage(movementX, movementY);
         }//if (stages.practice) 
     }
     function lockChange() {
@@ -314,11 +274,12 @@ window.onload = function () {
             trajectoryPoints3.length = 0;
             trajectoryPoints4.length = 0;
             trajectoryPointsTime.length = 0;
+            changeIndex = false;
         }
     }
 
     function touch_start_handler(e) {
-        let eps = 10, //pixel gap to get the pen by its end
+        let eps = 15, //pixel gap to get the pen by its end
             getPenX = cfg.width / 2.0 + penInitialParams.positionX, //coords of pen`s end
             getPenY = 75;
         penCoords.x = getPenX;
@@ -395,15 +356,6 @@ window.onload = function () {
     function mod(x) { //x set -1 or 1 if it is out of interval [-1; 1] 
         return Math.abs(x) > 1 ? 1.0 * x / Math.abs(x) : x;
     }
-    //rotate the vector by the angle and return x,y - end of the new vector
-    function isRotatedPointInPath(startX, startY, endX, endY, angle) {
-        let alfa = angle * Math.PI / 180.0;
-        let x = (endX - startX) * Math.cos(alfa) + (endY - startY) * Math.sin(alfa);
-        let y = (endY - startY) * Math.cos(alfa) - (endX - startX) * Math.sin(alfa);
-        x += startX; y += startY;
-        let k = (x + cfg.width * y); //index in data
-        return [(patternData[dataIndex][k] == 1), x, y];
-    }
     //get the rotation angles by the moving coords and rotate the pen
     function movePen(newPenCoordX, newPenCoordY, radius) {
         penCoords.x = newPenCoordX; penCoords.y = newPenCoordY;
@@ -419,5 +371,52 @@ window.onload = function () {
         if (!Number.isNaN(xAngle))
             penObj.rotation.x = xAngle;
     }
+    function trainingStage(movementX, movementY) {
+        if ((Math.abs(movementX) > 100 || Math.abs(movementY) > 100)) return;
+        //запрет перескакивать
+        if ((Math.abs(movementX) > 10 || Math.abs(movementY) > 10) &&
+            (penCoords.x < 460 && penCoords.x > 300 && penCoords.y > 30 && penCoords.y < 150)) return;
+        //change index of the pattern data
+        if (penCoords.x < 250 || penCoords.y > 350) {
+            changeIndex = true;
+        }
+        if (penCoords.x > 370 && penCoords.x < 400 && penCoords.y < 120 && penCoords.y > 55 && changeIndex) {
+            changeIndex = false;
+            dataIndex = dataIndex == 0 ? 1 : 0;
+        }
 
+        let newPenCoordX = penCoords.x + movementX;
+        let newPenCoordY = penCoords.y + movementY;
+        let k = (newPenCoordX + cfg.width * newPenCoordY); //index in data
+        if (patternData[dataIndex][k] == 1) 
+            movePen(newPenCoordX, newPenCoordY, cfg.R);      
+        else {
+            k = (newPenCoordX + cfg.width * (newPenCoordY + 3));
+            if (patternData[dataIndex][k] == 1) 
+                movePen(newPenCoordX, newPenCoordY + 3, cfg.R);
+            else {
+                k = (newPenCoordX + cfg.width * (newPenCoordY - 3));
+                if (patternData[dataIndex][k] == 1) 
+                    movePen(newPenCoordX, newPenCoordY - 3, cfg.R);
+                else {
+                    k = (newPenCoordX + cfg.width * (newPenCoordY + 8));
+                    if (patternData[dataIndex][k] == 1) 
+                        movePen(newPenCoordX, newPenCoordY + 8, cfg.R);
+                }
+                }
+            }
+    }
+    function practiceStage(movementX, movementY) {
+        let newPenCoordX = penCoords.x + movementX;
+        let newPenCoordY = penCoords.y + movementY;
+        movePen(newPenCoordX, newPenCoordY, cfg.R);
+        //draw line 
+        let lineX = 280.0*(penCoords.x - 0.5 * cfg.width) / (0.5 * cfg.width);
+        let lineY = -150.0 * (penCoords.y - 0.5 * cfg.height) / (0.5 * cfg.height);
+        trajectoryPoints.push(new THREE.Vector3(lineX, lineY, 600));
+        trajectoryPoints2.push(new THREE.Vector3(lineX, lineY + 0.5, 600));
+        trajectoryPoints3.push(new THREE.Vector3(lineX, lineY - 0.5, 600));
+        trajectoryPoints4.push(new THREE.Vector3(lineX - 0.5, lineY, 600));
+        trajectoryPointsTime.push(new Date);
+    }
 }
