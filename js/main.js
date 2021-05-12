@@ -8,6 +8,7 @@ window.onload = function () {
         pathSrc: './assets/img/path.png',
         trainingPath1Src: './assets/img/path1.png',
         trainingPath2Src: './assets/img/path2.png',
+        trainingPath3Src: './assets/img/pathExam.png',
         bgSrc: './assets/img/interaction_bg.jpg',
         modelsPath: './assets/models/',
         penSize: 49,        
@@ -38,7 +39,8 @@ window.onload = function () {
     //unseen canvases to draw the pattern and get data from it
     let patternData = []; //data 850x450 of 0 and 1. where 0 - no path in coord, 1 - has path 
     patternData.push(); patternData.push();
-    patternData[0] = []; patternData[1] = []; let dataIndex = 0; let changeIndex = false;
+    patternData[0] = []; patternData[1] = []; patternData[2] = [];
+    let dataIndex = 0; let changeIndex = false;
     //get data from supportingCanvas
     let patternCanvas = document.getElementById('supportingCanvas');
     patternCanvas.setAttribute('width', cfg.width);
@@ -81,6 +83,27 @@ window.onload = function () {
             i += 4;
         } while (i < patternDataExtended.length);
     };
+    //full
+    let supportingCanvas3 = document.getElementById('supportingCanvas3');
+    supportingCanvas3.setAttribute('width', cfg.width);
+    supportingCanvas3.setAttribute('height', cfg.height);
+    let patternCanvas3Contex = supportingCanvas3.getContext('2d');
+    let imageOfPath3 = new Image(); imageOfPath3.src = cfg.trainingPath3Src;
+    imageOfPath3.onload = function () {
+        patternCanvas3Contex.drawImage(imageOfPath3, 0, 0)
+        //extended data array have color of each pixel in RGBA
+        let patternDataExtended = patternCanvas3Contex.getImageData(0, 0, cfg.width, cfg.height).data;
+        let i = 0;
+        do {
+            if (patternDataExtended[i] == 0 && 
+                patternDataExtended[i + 1] == 0 &&
+                patternDataExtended[i + 2] == 0 &&
+                patternDataExtended[i + 3] == 0)
+                patternData[2].push(0);
+            else patternData[2].push(1);
+            i += 4;
+        } while (i < patternDataExtended.length);
+    };
 
     //main canvas to draw the scene
     let canvas = document.getElementById('canvas');
@@ -114,6 +137,8 @@ window.onload = function () {
     let patternPlaneMesh = new THREE.Mesh(patternPlane, material); 
     //patternPlaneMesh.position.z += 400;
     patternPlaneMesh.scale.set(1.6, 1.6, 1.6);
+    //patternPlaneMesh.position.y -= 20;
+    //patternPlaneMesh.rotation.x -= 5.0 * Math.PI / 180.0;
     scene.add(patternPlaneMesh);
 
     //objects
@@ -167,32 +192,12 @@ window.onload = function () {
     let splineObject2;
     let splineObject3;
     let splineObject4;
-
-    //----webgl-------------------
-    const dataTexture = new Uint8Array(4 * cfg.width * cfg.height);
-    /*
-    const color = new THREE.Color( 0xff0000 );
-
-    const r = Math.floor( color.r * 255 );
-    const g = Math.floor( color.g * 255 );
-    const b = Math.floor( color.b * 255 );*/
-
-    for ( let i = 0; i < 4 * cfg.width * cfg.height; i ++ ) {
-        const stride = i * 4;
-        dataTexture[ stride ] = 255.0;
-        dataTexture[ stride + 1 ] = 100.0;
-        dataTexture[ stride + 2 ] = 0.0;
-        dataTexture[ stride + 3 ] = 100.0;
+    //
+    let exam = {
+        count: 0,
+        maxCount: 5,
+        inline: true,
     }
-    const pathTexture = new THREE.DataTexture(dataTexture, cfg.width, cfg.height, THREE.RGBAFormat);
-    const trajectoryPlane = new THREE.PlaneGeometry(cfg.width, cfg.height, 10.0);
-    let m = new THREE.MeshBasicMaterial({
-        map: pathTexture,
-        transparent: true
-    });    
-    let trajectoryPlaneMesh = new THREE.Mesh(trajectoryPlane, m); 
-    trajectoryPlaneMesh.position.z += 400;
-    //scene.add(trajectoryPlaneMesh);
 
     //-----------------main render loop-------------------------
     function loop() {
@@ -284,6 +289,9 @@ window.onload = function () {
         if (stages.practice) {
             practiceStage(movementX, movementY);
         }//if (stages.practice) 
+        if (stages.exam) {
+            examStage(movementX, movementY);
+        }
     }
     function lockChange() {
         if(document.pointerLockElement === canvas ||
@@ -312,8 +320,9 @@ window.onload = function () {
         penCoords.y = getPenY;
         if (Math.abs(e.touches[0].pageX - getPenX) < eps && Math.abs(e.touches[0].pageY - getPenY) < eps) {
             mouseObj.isDown = true;
-            mouseObj.startX = e.touches[0].pageX;
-            mouseObj.startY = e.touches[0].pageY;
+            let touch = e.originalEvent.touches[0] || e.originalEvent.changedTouches[0];
+            mouseObj.startX = touch.pageX;
+            mouseObj.startY = touch.pageY;
         }
     }
     function touch_move_handler(e) {
@@ -324,43 +333,28 @@ window.onload = function () {
         mouseObj.endX = mouseObj.startX;
         mouseObj.endY = mouseObj.startY;
         
-        mouseObj.startX = e.touches[0].pageX;
-        mouseObj.startY = e.touches[0].pageY;
+        let touch = e.originalEvent.touches[0] || e.originalEvent.changedTouches[0];
+        mouseObj.startX = touch.pageX;
+        mouseObj.startY = touch.pageY;
 
         //calculate new potential coords of pen
-        let newPenCoordX = penCoords.x - cfg.touchStep*(mouseObj.endX - mouseObj.startX) / Math.abs(mouseObj.endX - mouseObj.startX);
-        let newPenCoordY = penCoords.y - cfg.touchStep*(mouseObj.endY - mouseObj.startY) / Math.abs(mouseObj.endY - mouseObj.startY);
-
-        //change index of the pattern data
-        if (penCoords.x < 250 || penCoords.x > 550 || penCoords.y > 350) {
-            changeIndex = true;
+        //let newPenCoordX = penCoords.x - cfg.touchStep*(mouseObj.endX - mouseObj.startX) / Math.abs(mouseObj.endX - mouseObj.startX);
+        //let newPenCoordY = penCoords.y - cfg.touchStep*(mouseObj.endY - mouseObj.startY) / Math.abs(mouseObj.endY - mouseObj.startY);
+        
+        let movementX = mouseObj.endX - mouseObj.startX;
+        let movementY = mouseObj.endY - mouseObj.startY;
+        
+        //training mode
+        if (stages.training) {
+            trainingStage(movementX, movementY);
+        };//if (stages.training)
+        if (stages.practice) {
+            practiceStage(movementX, movementY);
+        }//if (stages.practice) 
+        if (stages.exam) {
+            examStage(movementX, movementY);
         }
-        if (penCoords.x > 370 && penCoords.x < 400 && penCoords.y < 120 && penCoords.y > 55 && changeIndex) {
-            changeIndex = false;
-            dataIndex = dataIndex == 0 ? 1 : 0;
-        }
-        //k - index in patternData
-        let i = 0;
-        do {
-            let rotatedCoords;
-            rotatedCoords = isRotatedPointInPath(penCoords.x, penCoords.y, newPenCoordX, newPenCoordY, i * 10);
-            if (rotatedCoords[0]) {
-                newPenCoordX = rotatedCoords[1];
-                newPenCoordY = rotatedCoords[2];
-                movePen(newPenCoordX, newPenCoordY, cfg.R);
-                i = 10;
-                break;
-            }
-            rotatedCoords = isRotatedPointInPath(penCoords.x, penCoords.y, newPenCoordX, newPenCoordY, i * -10);
-            if (rotatedCoords[0]) {
-                newPenCoordX = rotatedCoords[1];
-                newPenCoordY = rotatedCoords[2];
-                movePen(newPenCoordX, newPenCoordY, cfg.R);
-                i = 10;
-                break;
-            }
-            i += 1;
-        } while (i < 10); 
+        
     }
     function touch_up_handler() {
         mouseObj.isDown = false;
@@ -373,9 +367,20 @@ window.onload = function () {
         if (stages.training) {
             stages.training = false;
             stages.practice = true;
+            stages.exam = false;
             stageBtn.value = "Перейти к экзамену";
             mouseObj.isDown = false;
         }
+        else if (stages.practice) {
+                stages.training = false;
+                stages.practice = false;
+                stages.exam = true;
+                stageBtn.style.display = 'none';
+                mouseObj.isDown = false;
+                let inputText = document.getElementById('inputText');
+                inputText.style.display = 'block';
+                inputText.value = "Начните экзамен";
+            };
     })
 
     //set of functions
@@ -444,5 +449,18 @@ window.onload = function () {
         trajectoryPoints3.push(new THREE.Vector3(lineX, lineY - 0.5, 600));
         trajectoryPoints4.push(new THREE.Vector3(lineX - 0.5, lineY, 600));
         trajectoryPointsTime.push(new Date);
+    }
+    function examStage(movementX, movementY) {
+        let newPenCoordX = penCoords.x + movementX;
+        let newPenCoordY = penCoords.y + movementY;
+        movePen(newPenCoordX, newPenCoordY, cfg.R);
+        let inputText = document.getElementById('inputText');
+        inputText.value = "В процессе";
+        let k = (newPenCoordX + cfg.width * newPenCoordY); //index in data
+        if (patternData[2][k] == 0) {
+            exam.inline = false;
+            inputText.value = "Экзамен не сдан";    
+        }
+             
     }
 }
