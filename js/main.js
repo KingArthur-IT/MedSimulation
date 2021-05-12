@@ -168,6 +168,32 @@ window.onload = function () {
     let splineObject3;
     let splineObject4;
 
+    //----webgl-------------------
+    const dataTexture = new Uint8Array(4 * cfg.width * cfg.height);
+    /*
+    const color = new THREE.Color( 0xff0000 );
+
+    const r = Math.floor( color.r * 255 );
+    const g = Math.floor( color.g * 255 );
+    const b = Math.floor( color.b * 255 );*/
+
+    for ( let i = 0; i < 4 * cfg.width * cfg.height; i ++ ) {
+        const stride = i * 4;
+        dataTexture[ stride ] = 255.0;
+        dataTexture[ stride + 1 ] = 100.0;
+        dataTexture[ stride + 2 ] = 0.0;
+        dataTexture[ stride + 3 ] = 100.0;
+    }
+    const pathTexture = new THREE.DataTexture(dataTexture, cfg.width, cfg.height, THREE.RGBAFormat);
+    const trajectoryPlane = new THREE.PlaneGeometry(cfg.width, cfg.height, 10.0);
+    let m = new THREE.MeshBasicMaterial({
+        map: pathTexture,
+        transparent: true
+    });    
+    let trajectoryPlaneMesh = new THREE.Mesh(trajectoryPlane, m); 
+    trajectoryPlaneMesh.position.z += 400;
+    //scene.add(trajectoryPlaneMesh);
+
     //-----------------main render loop-------------------------
     function loop() {
         if (stages.practice) {                   
