@@ -366,7 +366,7 @@ window.onload = function () {
             }
     }
     function touch_move_handler(e) {
-        //e.preventDefault();
+        e.preventDefault();
         if (!simulation.mouse.isDown) return;        
         //training regime
         
