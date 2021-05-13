@@ -48,7 +48,11 @@ window.onload = function () {
             maxCount: 5,
             inline: true,
             pointsEps: 15,
-            path: ''
+            path: '',
+            rightPath: true,
+            lastMovementTime: 0,
+            nonStop: true,
+            notQuick: true
         },
         checkpoint: {
             coordsX: [430, 610, 430, 245, 500, 360, 360, 500],
@@ -306,6 +310,17 @@ window.onload = function () {
         document.mozPointerLockElement === canvas ||
         document.webkitPointerLockElement === canvas) {
             console.log('The pointer lock status is now locked');
+            if (simulation.stages.exam) {
+                simulation.exam.count = 0;
+                simulation.exam.inline = true;
+                simulation.exam.path = '';
+                for (let i = 0; i < 8; i++)
+                    simulation.checkpoint.passPoints[i] = false;
+                simulation.exam.rightPath = true;
+                simulation.exam.nonStop = true;
+                simulation.exam.notQuick = true;
+                simulation.exam.lastMovementTime = new Date();
+            }
         } else {
             console.log('The pointer lock status is now unlocked');
             simulation.mouse.isDown = false;
@@ -317,6 +332,10 @@ window.onload = function () {
             trajectoryPoints4.length = 0;
             trajectoryPointsTime.length = 0;
             simulation.changeIndex = false;
+            if (simulation.stages.exam) {
+                if (document.getElementById('examText').value != "Экзамен сдан")
+                    document.getElementById('examText').value = "Начните экзамен";
+            }
         }
     }
 
@@ -345,7 +364,7 @@ window.onload = function () {
         
         let evt = (typeof e.originalEvent === 'undefined') ? e : e.originalEvent;
         let touch = evt.originalEvent.touches[0] || evt.originalEvent.changedTouches[0];
-        
+
         simulation.mouse.startX = touch.pageX;
         simulation.mouse.startY = touch.pageY;
 
@@ -392,6 +411,7 @@ window.onload = function () {
                 let inputText = document.getElementById('examText');
                 inputText.style.display = 'block';
                 inputText.value = "Начните экзамен";
+                simulation.exam.rightPath = true;
             };
     })
 
@@ -467,16 +487,33 @@ window.onload = function () {
         trajectoryPointsTime.push(new Date);
     }
     function examStage(movementX, movementY) {
+        let inputText = document.getElementById('examText');
+
+        if (movementX > 5 || movementY > 5) {
+            simulation.exam.notQuick = false;
+            inputText.value = "Слишком быстро";
+        };
+        
+        let time = new Date;
+
+        if (time - simulation.exam.lastMovementTime > 1000) {
+            simulation.exam.nonStop = false;
+            inputText.value = "Запрещены остановки";
+        } else simulation.exam.lastMovementTime = new Date();
+
         let newPenCoordX = simulation.penCoords.x + movementX;
         let newPenCoordY = simulation.penCoords.y + movementY;
         movePen(newPenCoordX, newPenCoordY, cfg.R);
-        let inputText = document.getElementById('examText');
-        inputText.value = "В процессе";
+        
+        if (simulation.exam.inline && simulation.exam.rightPath &&
+            simulation.exam.nonStop && simulation.exam.notQuick)
+            inputText.value = "Верных движений: " + simulation.exam.count;
+        else return;
+            
         let k = (newPenCoordX + cfg.width * newPenCoordY); //index in data
         if (patternData[2][k] == 0) {
             simulation.exam.inline = false;
-            inputText.value = "Экзамен не сдан";
-            console.log('out of path')
+            inputText.value = "Выход за пределы";
         }
         //path
         let allPoint = true;
@@ -486,29 +523,35 @@ window.onload = function () {
                 !simulation.checkpoint.passPoints[i]) {
                 simulation.checkpoint.passPoints[i] = true;
                 simulation.exam.path += i;
-                console.log(simulation.exam.path)
             }//if
             if (!simulation.checkpoint.passPoints[i])
                 allPoint = false;
         }
         //count
         if (Math.abs(newPenCoordX - simulation.checkpoint.coordsX[0]) < simulation.exam.pointsEps &&
-            Math.abs(newPenCoordY - simulation.checkpoint.coordsY[0]) < simulation.exam.pointsEps &
-            allPoint && (
-            simulation.exam.path == simulation.checkpoint.passExam[0] ||
-            simulation.exam.path == simulation.checkpoint.passExam[1] ||
-            simulation.exam.path == simulation.checkpoint.passExam[2] ||
-            simulation.exam.path == simulation.checkpoint.passExam[3]
-            )) {
-            simulation.exam.count += 1;
-            simulation.exam.path = '';
-            for (let i = 0; i < 8; i++)
-                simulation.checkpoint.passPoints[i] = false;
-        }//if  
+            Math.abs(newPenCoordY - simulation.checkpoint.coordsY[0]) < simulation.exam.pointsEps &&
+            allPoint) {
+            if (
+                simulation.exam.path == simulation.checkpoint.passExam[0] ||
+                simulation.exam.path == simulation.checkpoint.passExam[1] ||
+                simulation.exam.path == simulation.checkpoint.passExam[2] ||
+                simulation.exam.path == simulation.checkpoint.passExam[3]
+            ) {
+                simulation.exam.count += 1;
+                simulation.exam.path = '';
+                for (let i = 0; i < 8; i++)
+                    simulation.checkpoint.passPoints[i] = false;
+                document.getElementById('examText').value = "Верных движений: " + simulation.exam.count;
+            } else {
+                simulation.exam.rightPath = false;
+                document.getElementById('examText').value = "Траектория не верная";
+            }            
+        }//if 
         //pass
         if (simulation.exam.count == simulation.exam.maxCount &&
-            simulation.exam.inline) {
-            console.log('pass');
+            simulation.exam.inline && simulation.exam.rightPath &&
+            simulation.exam.nonStop && simulation.exam.notQuick) {
+            document.getElementById('examText').value = "Экзамен сдан";
             }
     }//exam function
 }//onload

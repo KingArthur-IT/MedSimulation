@@ -28,8 +28,22 @@
         font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
         cursor: pointer;
         color: rgb(50, 50, 50);
+        border: 1px solid rgba(14, 11, 11, 0.3);
+        box-shadow: 1px 0px 0px 0px rgba(50,50,50,0.3);
+      }
+      #examText{
+        position: absolute;
+        top: 400px;
+        left: 650px;
+        padding: 1%;
+        background-color: transparent;
+        font-size: 14px;
+        font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+        color: rgb(50, 50, 50);
         border: 1px solid rgba(50,50,50,0.3);
         box-shadow: 1px 0px 0px 0px rgba(50,50,50,0.3);
+        width: 150px;
+        display: none;
       }
     </style>
   </head>
@@ -40,7 +54,6 @@
     <canvas id="supportingCanvas"></canvas>
     <canvas id="supportingCanvas2"></canvas>
     <canvas id="supportingCanvas3"></canvas>
-    <canvas id="webGlsupportingCanvas"></canvas>
     <script src="./js/three.js"></script>
     <script src="./js/MTLLoader.js"></script>
     <script src="./js/OBJLoader.js"></script>
