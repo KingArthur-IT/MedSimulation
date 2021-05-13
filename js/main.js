@@ -341,18 +341,29 @@ window.onload = function () {
 
     function touch_start_handler(e) {
         let eps = 15, //pixel gap to get the pen by its end
-            getPenX = cfg.width / 2.0 + penInitialParams.positionX, //coords of pen`s end
+            getPenX = cfg.width / 2.0 + simulation.penInitialParams.positionX, //coords of pen`s end
             getPenY = 75;
         simulation.penCoords.x = getPenX;
         simulation.penCoords.y = getPenY;
         let evt = (typeof e.originalEvent === 'undefined') ? e : e.originalEvent;
-        let touch = evt.originalEvent.touches[0] || evt.originalEvent.changedTouches[0];
+        let touch = evt.touches[0] || evt.changedTouches[0];
 
         if (Math.abs(touch.pageX - getPenX) < eps && Math.abs(touch.pageY - getPenY) < eps) {
             simulation.mouse.isDown = true;            
             simulation.mouse.startX = touch.pageX;
             simulation.mouse.startY = touch.pageY;
         }
+        if (simulation.stages.exam) {
+                simulation.exam.count = 0;
+                simulation.exam.inline = true;
+                simulation.exam.path = '';
+                for (let i = 0; i < 8; i++)
+                    simulation.checkpoint.passPoints[i] = false;
+                simulation.exam.rightPath = true;
+                simulation.exam.nonStop = true;
+                simulation.exam.notQuick = true;
+                simulation.exam.lastMovementTime = new Date();
+            }
     }
     function touch_move_handler(e) {
         e.preventDefault();
@@ -363,7 +374,7 @@ window.onload = function () {
         simulation.mouse.endY = simulation.mouse.startY;
         
         let evt = (typeof e.originalEvent === 'undefined') ? e : e.originalEvent;
-        let touch = evt.originalEvent.touches[0] || evt.originalEvent.changedTouches[0];
+        let touch = evt.touches[0] || evt.changedTouches[0];
 
         simulation.mouse.startX = touch.pageX;
         simulation.mouse.startY = touch.pageY;
@@ -372,8 +383,8 @@ window.onload = function () {
         //let newPenCoordX = penCoords.x - cfg.touchStep*(mouseObj.endX - mouseObj.startX) / Math.abs(mouseObj.endX - mouseObj.startX);
         //let newPenCoordY = penCoords.y - cfg.touchStep*(mouseObj.endY - mouseObj.startY) / Math.abs(mouseObj.endY - mouseObj.startY);
         
-        let movementX = simulation.mouse.endX - simulation.mouse.startX;
-        let movementY = simulation.mouse.endY - simulation.mouse.startY;
+        let movementX = -(simulation.mouse.endX - simulation.mouse.startX);
+        let movementY = -(simulation.mouse.endY - simulation.mouse.startY);
         
         //training mode
         if (simulation.stages.training) {
@@ -391,6 +402,17 @@ window.onload = function () {
         simulation.mouse.isDown = false;
         startPenObject();
         simulation.dataIndex = 0;
+
+        trajectoryPoints.length = 0;
+        trajectoryPoints2.length = 0;
+        trajectoryPoints3.length = 0;
+        trajectoryPoints4.length = 0;
+        trajectoryPointsTime.length = 0;
+        simulation.changeIndex = false;
+        if (simulation.stages.exam) {
+            if (document.getElementById('examText').value != "Экзамен сдан")
+                document.getElementById('examText').value = "Начните экзамен";
+           }
     }       
 
     let stageBtn = document.getElementById('stageBtn');
