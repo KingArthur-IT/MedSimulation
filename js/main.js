@@ -388,7 +388,18 @@ window.onload = function () {
         
         //training mode
         if (simulation.stages.training) {
-            trainingStage(movementX, movementY);
+            //trainingStage(movementX, movementY);
+            let newPenCoordX = touch.pageX;
+            let newPenCoordY = touch.pageY;
+            movePen(newPenCoordX, newPenCoordY, cfg.R);
+            //draw line 
+            let lineX = 280.0 * (simulation.penCoords.x - 0.5 * cfg.width) / (0.5 * cfg.width);
+            let lineY = -150.0 * (simulation.penCoords.y - 0.5 * cfg.height) / (0.5 * cfg.height);
+            trajectoryPoints.push(new THREE.Vector3(lineX, lineY, 600));
+            trajectoryPoints2.push(new THREE.Vector3(lineX, lineY + 0.5, 600));
+            trajectoryPoints3.push(new THREE.Vector3(lineX, lineY - 0.5, 600));
+            trajectoryPoints4.push(new THREE.Vector3(lineX - 0.5, lineY, 600));
+            trajectoryPointsTime.push(new Date);
         };//if (stages.training)
         if (simulation.stages.practice) {
             practiceStage(movementX, movementY);
