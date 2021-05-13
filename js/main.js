@@ -51,8 +51,7 @@ window.onload = function () {
             path: '',
             rightPath: true,
             lastMovementTime: 0,
-            nonStop: true,
-            notQuick: true
+            nonStop: true
         },
         checkpoint: {
             coordsX: [430, 610, 430, 245, 500, 360, 360, 500],
@@ -318,7 +317,6 @@ window.onload = function () {
                     simulation.checkpoint.passPoints[i] = false;
                 simulation.exam.rightPath = true;
                 simulation.exam.nonStop = true;
-                simulation.exam.notQuick = true;
                 simulation.exam.lastMovementTime = new Date();
             }
         } else {
@@ -361,7 +359,6 @@ window.onload = function () {
                     simulation.checkpoint.passPoints[i] = false;
                 simulation.exam.rightPath = true;
                 simulation.exam.nonStop = true;
-                simulation.exam.notQuick = true;
                 simulation.exam.lastMovementTime = new Date();
             }
     }
@@ -510,11 +507,6 @@ window.onload = function () {
     }
     function examStage(movementX, movementY) {
         let inputText = document.getElementById('examText');
-
-        if (movementX > 5 || movementY > 5) {
-            simulation.exam.notQuick = false;
-            inputText.value = "Слишком быстро";
-        };
         
         let time = new Date;
 
@@ -528,7 +520,7 @@ window.onload = function () {
         movePen(newPenCoordX, newPenCoordY, cfg.R);
         
         if (simulation.exam.inline && simulation.exam.rightPath &&
-            simulation.exam.nonStop && simulation.exam.notQuick)
+            simulation.exam.nonStop)
             inputText.value = "Верных движений: " + simulation.exam.count;
         else return;
             
@@ -572,7 +564,7 @@ window.onload = function () {
         //pass
         if (simulation.exam.count == simulation.exam.maxCount &&
             simulation.exam.inline && simulation.exam.rightPath &&
-            simulation.exam.nonStop && simulation.exam.notQuick) {
+            simulation.exam.nonStop) {
             document.getElementById('examText').value = "Экзамен сдан";
             }
     }//exam function
@@ -625,12 +617,7 @@ window.onload = function () {
     }
     function examStageTouch(x, y) {
         let inputText = document.getElementById('examText');
-        /*
-        if (movementX > 5 || movementY > 5) {
-            simulation.exam.notQuick = false;
-            inputText.value = "Слишком быстро";
-        };*/
-        
+
         let time = new Date;
 
         if (time - simulation.exam.lastMovementTime > 1000) {
@@ -643,7 +630,7 @@ window.onload = function () {
         movePen(newPenCoordX, newPenCoordY, cfg.R);
         
         if (simulation.exam.inline && simulation.exam.rightPath &&
-            simulation.exam.nonStop && simulation.exam.notQuick)
+            simulation.exam.nonStop)
             inputText.value = "Верных движений: " + simulation.exam.count;
         else return;
             
@@ -687,7 +674,7 @@ window.onload = function () {
         //pass
         if (simulation.exam.count == simulation.exam.maxCount &&
             simulation.exam.inline && simulation.exam.rightPath &&
-            simulation.exam.nonStop && simulation.exam.notQuick) {
+            simulation.exam.nonStop) {
             document.getElementById('examText').value = "Экзамен сдан";
             }
     }//exam function
