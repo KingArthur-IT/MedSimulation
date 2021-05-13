@@ -366,7 +366,7 @@ window.onload = function () {
             }
     }
     function touch_move_handler(e) {
-        e.preventDefault();
+        //e.preventDefault();
         if (!simulation.mouse.isDown) return;        
         //training regime
         
@@ -383,29 +383,18 @@ window.onload = function () {
         //let newPenCoordX = penCoords.x - cfg.touchStep*(mouseObj.endX - mouseObj.startX) / Math.abs(mouseObj.endX - mouseObj.startX);
         //let newPenCoordY = penCoords.y - cfg.touchStep*(mouseObj.endY - mouseObj.startY) / Math.abs(mouseObj.endY - mouseObj.startY);
         
-        let movementX = -(simulation.mouse.endX - simulation.mouse.startX);
-        let movementY = -(simulation.mouse.endY - simulation.mouse.startY);
+        let movementX = touch.pageX;
+        let movementY = touch.pageY;
         
         //training mode
         if (simulation.stages.training) {
-            //trainingStage(movementX, movementY);
-            let newPenCoordX = touch.pageX;
-            let newPenCoordY = touch.pageY;
-            movePen(newPenCoordX, newPenCoordY, cfg.R);
-            //draw line 
-            let lineX = 280.0 * (simulation.penCoords.x - 0.5 * cfg.width) / (0.5 * cfg.width);
-            let lineY = -150.0 * (simulation.penCoords.y - 0.5 * cfg.height) / (0.5 * cfg.height);
-            trajectoryPoints.push(new THREE.Vector3(lineX, lineY, 600));
-            trajectoryPoints2.push(new THREE.Vector3(lineX, lineY + 0.5, 600));
-            trajectoryPoints3.push(new THREE.Vector3(lineX, lineY - 0.5, 600));
-            trajectoryPoints4.push(new THREE.Vector3(lineX - 0.5, lineY, 600));
-            trajectoryPointsTime.push(new Date);
+            trainingStageTouch(movementX, movementY);
         };//if (stages.training)
         if (simulation.stages.practice) {
-            practiceStage(movementX, movementY);
+            practiceStageTouch(movementX, movementY);
         }//if (stages.practice) 
         if (simulation.stages.exam) {
-            examStage(movementX, movementY);
+            examStageTouch(movementX, movementY);
         }
         
     }
@@ -536,6 +525,121 @@ window.onload = function () {
 
         let newPenCoordX = simulation.penCoords.x + movementX;
         let newPenCoordY = simulation.penCoords.y + movementY;
+        movePen(newPenCoordX, newPenCoordY, cfg.R);
+        
+        if (simulation.exam.inline && simulation.exam.rightPath &&
+            simulation.exam.nonStop && simulation.exam.notQuick)
+            inputText.value = "Верных движений: " + simulation.exam.count;
+        else return;
+            
+        let k = (newPenCoordX + cfg.width * newPenCoordY); //index in data
+        if (patternData[2][k] == 0) {
+            simulation.exam.inline = false;
+            inputText.value = "Выход за пределы";
+        }
+        //path
+        let allPoint = true;
+        for (let i = 1; i < simulation.checkpoint.coordsX.length; i++){
+            if (Math.abs(newPenCoordX - simulation.checkpoint.coordsX[i]) < simulation.exam.pointsEps &&
+                Math.abs(newPenCoordY - simulation.checkpoint.coordsY[i]) < simulation.exam.pointsEps &&
+                !simulation.checkpoint.passPoints[i]) {
+                simulation.checkpoint.passPoints[i] = true;
+                simulation.exam.path += i;
+            }//if
+            if (!simulation.checkpoint.passPoints[i])
+                allPoint = false;
+        }
+        //count
+        if (Math.abs(newPenCoordX - simulation.checkpoint.coordsX[0]) < simulation.exam.pointsEps &&
+            Math.abs(newPenCoordY - simulation.checkpoint.coordsY[0]) < simulation.exam.pointsEps &&
+            allPoint) {
+            if (
+                simulation.exam.path == simulation.checkpoint.passExam[0] ||
+                simulation.exam.path == simulation.checkpoint.passExam[1] ||
+                simulation.exam.path == simulation.checkpoint.passExam[2] ||
+                simulation.exam.path == simulation.checkpoint.passExam[3]
+            ) {
+                simulation.exam.count += 1;
+                simulation.exam.path = '';
+                for (let i = 0; i < 8; i++)
+                    simulation.checkpoint.passPoints[i] = false;
+                document.getElementById('examText').value = "Верных движений: " + simulation.exam.count;
+            } else {
+                simulation.exam.rightPath = false;
+                document.getElementById('examText').value = "Траектория не верная";
+            }            
+        }//if 
+        //pass
+        if (simulation.exam.count == simulation.exam.maxCount &&
+            simulation.exam.inline && simulation.exam.rightPath &&
+            simulation.exam.nonStop && simulation.exam.notQuick) {
+            document.getElementById('examText').value = "Экзамен сдан";
+            }
+    }//exam function
+    function trainingStageTouch(x, y) {
+        //запрет перескакивать
+
+        //change index of the pattern data
+        if (simulation.penCoords.x < 250 || simulation.penCoords.y > 350) {
+            simulation.changeIndex = true;
+        }
+        if (simulation.penCoords.x > 370 && simulation.penCoords.x < 400 &&
+            simulation.penCoords.y < 120 && simulation.penCoords.y > 55 && simulation.changeIndex) {
+            simulation.changeIndex = false;
+            simulation.dataIndex = simulation.dataIndex == 0 ? 1 : 0;
+        }
+
+        let newPenCoordX = x;
+        let newPenCoordY = y;
+        let k = (newPenCoordX + cfg.width * newPenCoordY); //index in data
+        if (patternData[simulation.dataIndex][k] == 1) 
+            movePen(newPenCoordX, newPenCoordY, cfg.R);      
+        else {
+            k = (newPenCoordX + cfg.width * (newPenCoordY + 3));
+            if (patternData[simulation.dataIndex][k] == 1) 
+                movePen(newPenCoordX, newPenCoordY + 3, cfg.R);
+            else {
+                k = (newPenCoordX + cfg.width * (newPenCoordY - 3));
+                if (patternData[simulation.dataIndex][k] == 1) 
+                    movePen(newPenCoordX, newPenCoordY - 3, cfg.R);
+                else {
+                    k = (newPenCoordX + cfg.width * (newPenCoordY + 8));
+                    if (patternData[simulation.dataIndex][k] == 1) 
+                        movePen(newPenCoordX, newPenCoordY + 8, cfg.R);
+                }
+                }
+            }
+    }
+    function practiceStageTouch(x, y) {
+        let newPenCoordX = x;
+        let newPenCoordY = y;
+        movePen(newPenCoordX, newPenCoordY, cfg.R);
+        //draw line 
+        let lineX = 280.0 * (simulation.penCoords.x - 0.5 * cfg.width) / (0.5 * cfg.width);
+        let lineY = -150.0 * (simulation.penCoords.y - 0.5 * cfg.height) / (0.5 * cfg.height);
+        trajectoryPoints.push(new THREE.Vector3(lineX, lineY, 600));
+        trajectoryPoints2.push(new THREE.Vector3(lineX, lineY + 0.5, 600));
+        trajectoryPoints3.push(new THREE.Vector3(lineX, lineY - 0.5, 600));
+        trajectoryPoints4.push(new THREE.Vector3(lineX - 0.5, lineY, 600));
+        trajectoryPointsTime.push(new Date);
+    }
+    function examStageTouch(x, y) {
+        let inputText = document.getElementById('examText');
+        /*
+        if (movementX > 5 || movementY > 5) {
+            simulation.exam.notQuick = false;
+            inputText.value = "Слишком быстро";
+        };*/
+        
+        let time = new Date;
+
+        if (time - simulation.exam.lastMovementTime > 1000) {
+            simulation.exam.nonStop = false;
+            inputText.value = "Запрещены остановки";
+        } else simulation.exam.lastMovementTime = new Date();
+
+        let newPenCoordX = x;
+        let newPenCoordY = y;
         movePen(newPenCoordX, newPenCoordY, cfg.R);
         
         if (simulation.exam.inline && simulation.exam.rightPath &&
