@@ -10,11 +10,7 @@ window.onload = function () {
         trainingPath2Src: './assets/img/path2.png',
         trainingPath3Src: './assets/img/pathExam.png',
         bgSrc: './assets/img/interaction_bg.jpg',
-        modelsPath: './assets/models/',
-        penSize: 49,        
-        R: 200, //max pixel radius of pen moving
-        maxAngle: (26.0) * Math.PI / 180.0,
-        touchStep: 5
+        modelsPath: './assets/models/'
     }
     let simulation = {
         penCoords : {
@@ -36,6 +32,7 @@ window.onload = function () {
         dataIndex: 0,
         changeIndex: false,
         penInitialParams : {
+            penSize: 49,
             angleX: - (25.0) * Math.PI / 180.0,
             angleY: 0.0,
             angleZ: 0.0,
@@ -43,6 +40,13 @@ window.onload = function () {
             positionY: -40,
             positionZ: 0
         },
+        penTopCoord: {
+            x: 431,
+            y: 75,
+            accuracy: 15
+        },
+        maxPenAngle: (26.0) * Math.PI / 180.0,
+        maxPixelPenRadius: 200,
         exam : {
             count: 0,
             maxCount: 5,
@@ -58,78 +62,18 @@ window.onload = function () {
             coordsY: [80, 90, 240, 90, 320, 320, 140, 140],
             passPoints: [false, false, false, false, false, false, false, false],
             passExam: ['1237456', '7456123', '3216547', '6547321']
-        }
+        },
+        trajectoryVisibilityTime: 5000,
+        examMaxStopTime: 1000
     }
 
-    //unseen canvases to draw the pattern and get data from it
-    let patternData = []; //data 850x450 of 0 and 1. where 0 - no path in coord, 1 - has path 
-    patternData.push(); patternData.push();
+    //data 850x450 of 0 and 1. where 0 - no path in coord, 1 - has path 
+    // [0] and [1] for training mode, [2] - full path for exam mode
+    let patternData = []; 
+    patternData.push(); patternData.push(); patternData.push();
     patternData[0] = []; patternData[1] = []; patternData[2] = [];
+    getDataFromImages();
 
-    
-    //get data from supportingCanvas
-    let patternCanvas = document.getElementById('supportingCanvas');
-    patternCanvas.setAttribute('width', cfg.width);
-    patternCanvas.setAttribute('height', cfg.height);
-    let patternCanvasContex = patternCanvas.getContext('2d');
-    let imageOfPath1 = new Image(); imageOfPath1.src = cfg.trainingPath1Src;
-    imageOfPath1.onload = function () {
-        patternCanvasContex.drawImage(imageOfPath1, 0, 0)
-        //extended data array have color of each pixel in RGBA
-        let patternDataExtended = patternCanvasContex.getImageData(0, 0, cfg.width, cfg.height).data;
-        let i = 0;
-        do {
-            if (patternDataExtended[i] == 0 && 
-                patternDataExtended[i + 1] == 0 &&
-                patternDataExtended[i + 2] == 0 &&
-                patternDataExtended[i + 3] == 0)
-                patternData[0].push(0);
-            else patternData[0].push(1);
-            i += 4;
-        } while (i < patternDataExtended.length);
-    };
-    //get data from supportingCanvas2
-    let supportingCanvas2 = document.getElementById('supportingCanvas2');
-    supportingCanvas2.setAttribute('width', cfg.width);
-    supportingCanvas2.setAttribute('height', cfg.height);
-    let patternCanvasContex2 = supportingCanvas2.getContext('2d');
-    let imageOfPath2 = new Image(); imageOfPath2.src = cfg.trainingPath2Src; 
-    imageOfPath2.onload = function () {
-        patternCanvasContex2.drawImage(imageOfPath2, 0, 0)
-        //extended data array have color of each pixel in RGBA
-        let patternDataExtended = patternCanvasContex2.getImageData(0, 0, cfg.width, cfg.height).data;
-        let i = 0;
-        do {
-            if (patternDataExtended[i] == 0 && 
-                patternDataExtended[i + 1] == 0 &&
-                patternDataExtended[i + 2] == 0 &&
-                patternDataExtended[i + 3] == 0)
-                patternData[1].push(0);
-            else patternData[1].push(1);
-            i += 4;
-        } while (i < patternDataExtended.length);
-    };
-    //full
-    let supportingCanvas3 = document.getElementById('supportingCanvas3');
-    supportingCanvas3.setAttribute('width', cfg.width);
-    supportingCanvas3.setAttribute('height', cfg.height);
-    let patternCanvas3Contex = supportingCanvas3.getContext('2d');
-    let imageOfPath3 = new Image(); imageOfPath3.src = cfg.trainingPath3Src;
-    imageOfPath3.onload = function () {
-        patternCanvas3Contex.drawImage(imageOfPath3, 0, 0)
-        //extended data array have color of each pixel in RGBA
-        let patternDataExtended = patternCanvas3Contex.getImageData(0, 0, cfg.width, cfg.height).data;
-        let i = 0;
-        do {
-            if (patternDataExtended[i] == 0 && 
-                patternDataExtended[i + 1] == 0 &&
-                patternDataExtended[i + 2] == 0 &&
-                patternDataExtended[i + 3] == 0)
-                patternData[2].push(0);
-            else patternData[2].push(1);
-            i += 4;
-        } while (i < patternDataExtended.length);
-    };
 
     //main canvas to draw the scene
     let canvas = document.getElementById('canvas');
@@ -161,10 +105,7 @@ window.onload = function () {
         transparent: true
     });    
     let patternPlaneMesh = new THREE.Mesh(patternPlane, material); 
-    //patternPlaneMesh.position.z += 400;
     patternPlaneMesh.scale.set(1.6, 1.6, 1.6);
-    //patternPlaneMesh.position.y -= 20;
-    //patternPlaneMesh.rotation.x -= 5.0 * Math.PI / 180.0;
     scene.add(patternPlaneMesh);
 
     //objects
@@ -178,61 +119,48 @@ window.onload = function () {
         objLoader.setMaterials(materials);
         objLoader.setPath(cfg.modelsPath);
         objLoader.load('bovie.obj', function (object) {
-            object.scale.set(cfg.penSize, cfg.penSize, cfg.penSize);
+            object.scale.set(simulation.penInitialParams.penSize,
+                simulation.penInitialParams.penSize, simulation.penInitialParams.penSize);
             object.position.set(0, 0, 0);
             object.rotation.set(Math.PI / 2.0, 10, 0);
             penObj.add(object);
             scene.add(penObj);
         });
     });
-
-    //set pen to initial state func
-    function startPenObject() {
-        penObj.rotation.x = simulation.penInitialParams.angleX;
-        penObj.rotation.y = simulation.penInitialParams.angleY;
-        penObj.rotation.z = simulation.penInitialParams.angleZ;
-        penObj.position.x = simulation.penInitialParams.positionX;
-        penObj.position.y = simulation.penInitialParams.positionY;
-        penObj.position.z = simulation.penInitialParams.positionZ;        
-    }; 
     startPenObject();
 
-    //trajectory line    
-    let trajectoryMaterial = new THREE.LineBasicMaterial({color: 0xff00ff});
-    let trajectoryPoints = []; let trajectoryPointsTime = [];
-    let trajectoryPoints2 = []; let trajectoryPoints3 = []; let trajectoryPoints4 = [];
-    //let curve;   let curvePoints;
-    let trajectoryGeometry;
-    let trajectoryGeometry2;
-    let trajectoryGeometry3;
-    let trajectoryGeometry4;
-    let splineObject;
-    let splineObject2;
-    let splineObject3;
-    let splineObject4;
+    //trajectory line for practice stage
+    let trajectoryMaterial = new THREE.LineBasicMaterial({ color: 0xff00ff });
+    //4 arays for line width
+    let trajectoryPoints = [],
+        trajectoryPointsTime = [], //time when the point was draw
+        trajectoryPoints2 = [],
+        trajectoryPoints3 = [],
+        trajectoryPoints4 = [];
+    let trajectoryGeometry, trajectoryGeometry2, trajectoryGeometry3, trajectoryGeometry4;
+    let lineObject, lineObject2, lineObject3, lineObject4;
 
     //-----------------main render loop-------------------------
     function loop() {
         if (simulation.stages.practice) {                   
             let time = new Date;
-            if (time - trajectoryPointsTime[0] > 5000 && trajectoryPoints.length > 0) {
+            if (time - trajectoryPointsTime[0] > simulation.trajectoryVisibilityTime
+                && trajectoryPoints.length > 0) {
                 trajectoryPoints.shift(); trajectoryPointsTime.shift();
                 trajectoryPoints2.shift();  trajectoryPoints3.shift();  trajectoryPoints4.shift();
             }
-            scene.remove(splineObject); scene.remove(splineObject2)
-            scene.remove(splineObject3); scene.remove(splineObject4)
+            scene.remove(lineObject); scene.remove(lineObject2)
+            scene.remove(lineObject3); scene.remove(lineObject4)
             trajectoryGeometry = new THREE.BufferGeometry().setFromPoints(trajectoryPoints);
             trajectoryGeometry2 = new THREE.BufferGeometry().setFromPoints(trajectoryPoints2);
             trajectoryGeometry3 = new THREE.BufferGeometry().setFromPoints(trajectoryPoints3);
             trajectoryGeometry4 = new THREE.BufferGeometry().setFromPoints(trajectoryPoints4);
-            splineObject = new THREE.Line(trajectoryGeometry, trajectoryMaterial);
-            splineObject2 = new THREE.Line(trajectoryGeometry2, trajectoryMaterial);
-            splineObject3 = new THREE.Line(trajectoryGeometry3, trajectoryMaterial);
-            splineObject4 = new THREE.Line(trajectoryGeometry4, trajectoryMaterial);
-            scene.add(splineObject);
-            scene.add(splineObject2);
-            scene.add(splineObject3);
-            scene.add(splineObject4);
+            lineObject = new THREE.Line(trajectoryGeometry, trajectoryMaterial);
+            lineObject2 = new THREE.Line(trajectoryGeometry2, trajectoryMaterial);
+            lineObject3 = new THREE.Line(trajectoryGeometry3, trajectoryMaterial);
+            lineObject4 = new THREE.Line(trajectoryGeometry4, trajectoryMaterial);
+            scene.add(lineObject); scene.add(lineObject2);
+            scene.add(lineObject3); scene.add(lineObject4);
         }
         renderer.render(scene, camera);
         requestAnimationFrame(loop)
@@ -242,7 +170,6 @@ window.onload = function () {
     //---------------mouse, touch, lock change events------------------
     canvas.addEventListener("mousedown",    mouse_down_handler);
     canvas.addEventListener("mousemove",    mouse_move_handler);
-    //canvas.addEventListener("mouseup",      mouse_up_handler);
     
     canvas.addEventListener("touchstart",   touch_start_handler);
     canvas.addEventListener("touchmove",    touch_move_handler);    
@@ -313,7 +240,7 @@ window.onload = function () {
                 simulation.exam.count = 0;
                 simulation.exam.inline = true;
                 simulation.exam.path = '';
-                for (let i = 0; i < 8; i++)
+                for (let i = 0; i < simulation.checkpoint.passPoints.length; i++)
                     simulation.checkpoint.passPoints[i] = false;
                 simulation.exam.rightPath = true;
                 simulation.exam.nonStop = true;
@@ -338,9 +265,9 @@ window.onload = function () {
     }
 
     function touch_start_handler(e) {
-        let eps = 15, //pixel gap to get the pen by its end
-            getPenX = cfg.width / 2.0 + simulation.penInitialParams.positionX, //coords of pen`s end
-            getPenY = 75;
+        let eps = simulation.penTopCoord.accuracy,  //pixel gap to get the pen by its end
+            getPenX = simulation.penTopCoord.x,     //coords of pen`s end
+            getPenY = simulation.penTopCoord.y;
         simulation.penCoords.x = getPenX;
         simulation.penCoords.y = getPenY;
         let evt = (typeof e.originalEvent === 'undefined') ? e : e.originalEvent;
@@ -355,7 +282,7 @@ window.onload = function () {
                 simulation.exam.count = 0;
                 simulation.exam.inline = true;
                 simulation.exam.path = '';
-                for (let i = 0; i < 8; i++)
+                for (let i = 0; i < simulation.checkpoint.passPoints.length; i++)
                     simulation.checkpoint.passPoints[i] = false;
                 simulation.exam.rightPath = true;
                 simulation.exam.nonStop = true;
@@ -365,7 +292,6 @@ window.onload = function () {
     function touch_move_handler(e) {
         e.preventDefault();
         if (!simulation.mouse.isDown) return;        
-        //training regime
         
         simulation.mouse.endX = simulation.mouse.startX;
         simulation.mouse.endY = simulation.mouse.startY;
@@ -376,10 +302,6 @@ window.onload = function () {
         simulation.mouse.startX = touch.pageX;
         simulation.mouse.startY = touch.pageY;
 
-        //calculate new potential coords of pen
-        //let newPenCoordX = penCoords.x - cfg.touchStep*(mouseObj.endX - mouseObj.startX) / Math.abs(mouseObj.endX - mouseObj.startX);
-        //let newPenCoordY = penCoords.y - cfg.touchStep*(mouseObj.endY - mouseObj.startY) / Math.abs(mouseObj.endY - mouseObj.startY);
-        
         let movementX = touch.pageX;
         let movementY = touch.pageY;
         
@@ -442,8 +364,8 @@ window.onload = function () {
     function movePen(newPenCoordX, newPenCoordY, radius) {
         simulation.penCoords.x = newPenCoordX; simulation.penCoords.y = newPenCoordY;
         //caclulate rotation angle around y and x axises
-        let yAngle = cfg.maxAngle * mod((cfg.centerX - simulation.penCoords.x) / radius);
-        let xAngle = cfg.maxAngle * mod((simulation.penCoords.y - cfg.centerY) / radius);
+        let yAngle = simulation.maxPenAngle * mod((cfg.centerX - simulation.penCoords.x) / radius);
+        let xAngle = simulation.maxPenAngle * mod((simulation.penCoords.y - cfg.centerY) / radius);
         //angle correction based on non centered obj position
         yAngle *= (simulation.penCoords.x - cfg.centerX - simulation.penInitialParams.positionX)
             / (simulation.penCoords.x - cfg.centerX);
@@ -475,19 +397,19 @@ window.onload = function () {
         let newPenCoordY = simulation.penCoords.y + movementY;
         let k = (newPenCoordX + cfg.width * newPenCoordY); //index in data
         if (patternData[simulation.dataIndex][k] == 1) 
-            movePen(newPenCoordX, newPenCoordY, cfg.R);      
+            movePen(newPenCoordX, newPenCoordY, simulation.maxPixelPenRadius);      
         else {
             k = (newPenCoordX + cfg.width * (newPenCoordY + 3));
             if (patternData[simulation.dataIndex][k] == 1) 
-                movePen(newPenCoordX, newPenCoordY + 3, cfg.R);
+                movePen(newPenCoordX, newPenCoordY + 3, simulation.maxPixelPenRadius);
             else {
                 k = (newPenCoordX + cfg.width * (newPenCoordY - 3));
                 if (patternData[simulation.dataIndex][k] == 1) 
-                    movePen(newPenCoordX, newPenCoordY - 3, cfg.R);
+                    movePen(newPenCoordX, newPenCoordY - 3, simulation.maxPixelPenRadius);
                 else {
                     k = (newPenCoordX + cfg.width * (newPenCoordY + 8));
                     if (patternData[simulation.dataIndex][k] == 1) 
-                        movePen(newPenCoordX, newPenCoordY + 8, cfg.R);
+                        movePen(newPenCoordX, newPenCoordY + 8, simulation.maxPixelPenRadius);
                 }
                 }
             }
@@ -495,7 +417,7 @@ window.onload = function () {
     function practiceStage(movementX, movementY) {
         let newPenCoordX = simulation.penCoords.x + movementX;
         let newPenCoordY = simulation.penCoords.y + movementY;
-        movePen(newPenCoordX, newPenCoordY, cfg.R);
+        movePen(newPenCoordX, newPenCoordY, simulation.maxPixelPenRadius);
         //draw line 
         let lineX = 280.0 * (simulation.penCoords.x - 0.5 * cfg.width) / (0.5 * cfg.width);
         let lineY = -150.0 * (simulation.penCoords.y - 0.5 * cfg.height) / (0.5 * cfg.height);
@@ -510,14 +432,14 @@ window.onload = function () {
         
         let time = new Date;
 
-        if (time - simulation.exam.lastMovementTime > 1000) {
+        if (time - simulation.exam.lastMovementTime > simulation.examMaxStopTime) {
             simulation.exam.nonStop = false;
             inputText.value = "Запрещены остановки";
         } else simulation.exam.lastMovementTime = new Date();
 
         let newPenCoordX = simulation.penCoords.x + movementX;
         let newPenCoordY = simulation.penCoords.y + movementY;
-        movePen(newPenCoordX, newPenCoordY, cfg.R);
+        movePen(newPenCoordX, newPenCoordY, simulation.maxPixelPenRadius);
         
         if (simulation.exam.inline && simulation.exam.rightPath &&
             simulation.exam.nonStop)
@@ -569,8 +491,6 @@ window.onload = function () {
             }
     }//exam function
     function trainingStageTouch(x, y) {
-        //запрет перескакивать
-
         //change index of the pattern data
         if (simulation.penCoords.x < 250 || simulation.penCoords.y > 350) {
             simulation.changeIndex = true;
@@ -585,19 +505,19 @@ window.onload = function () {
         let newPenCoordY = y;
         let k = (newPenCoordX + cfg.width * newPenCoordY); //index in data
         if (patternData[simulation.dataIndex][k] == 1) 
-            movePen(newPenCoordX, newPenCoordY, cfg.R);      
+            movePen(newPenCoordX, newPenCoordY, simulation.maxPixelPenRadius);      
         else {
             k = (newPenCoordX + cfg.width * (newPenCoordY + 3));
             if (patternData[simulation.dataIndex][k] == 1) 
-                movePen(newPenCoordX, newPenCoordY + 3, cfg.R);
+                movePen(newPenCoordX, newPenCoordY + 3, simulation.maxPixelPenRadius);
             else {
                 k = (newPenCoordX + cfg.width * (newPenCoordY - 3));
                 if (patternData[simulation.dataIndex][k] == 1) 
-                    movePen(newPenCoordX, newPenCoordY - 3, cfg.R);
+                    movePen(newPenCoordX, newPenCoordY - 3, simulation.maxPixelPenRadius);
                 else {
                     k = (newPenCoordX + cfg.width * (newPenCoordY + 8));
                     if (patternData[simulation.dataIndex][k] == 1) 
-                        movePen(newPenCoordX, newPenCoordY + 8, cfg.R);
+                        movePen(newPenCoordX, newPenCoordY + 8, simulation.maxPixelPenRadius);
                 }
                 }
             }
@@ -605,7 +525,7 @@ window.onload = function () {
     function practiceStageTouch(x, y) {
         let newPenCoordX = x;
         let newPenCoordY = y;
-        movePen(newPenCoordX, newPenCoordY, cfg.R);
+        movePen(newPenCoordX, newPenCoordY, simulation.maxPixelPenRadius);
         //draw line 
         let lineX = 280.0 * (simulation.penCoords.x - 0.5 * cfg.width) / (0.5 * cfg.width);
         let lineY = -150.0 * (simulation.penCoords.y - 0.5 * cfg.height) / (0.5 * cfg.height);
@@ -620,14 +540,14 @@ window.onload = function () {
 
         let time = new Date;
 
-        if (time - simulation.exam.lastMovementTime > 1000) {
+        if (time - simulation.exam.lastMovementTime > simulation.examMaxStopTime) {
             simulation.exam.nonStop = false;
             inputText.value = "Запрещены остановки";
         } else simulation.exam.lastMovementTime = new Date();
 
         let newPenCoordX = x;
         let newPenCoordY = y;
-        movePen(newPenCoordX, newPenCoordY, cfg.R);
+        movePen(newPenCoordX, newPenCoordY, simulation.maxPixelPenRadius);
         
         if (simulation.exam.inline && simulation.exam.rightPath &&
             simulation.exam.nonStop)
@@ -678,4 +598,79 @@ window.onload = function () {
             document.getElementById('examText').value = "Экзамен сдан";
             }
     }//exam function
+    function getDataFromImages() {
+        //to get patternData[0] for training mode
+        let patternCanvas = document.getElementById('supportingCanvas');
+        patternCanvas.setAttribute('width', cfg.width);
+        patternCanvas.setAttribute('height', cfg.height);
+        let patternCanvasContex = patternCanvas.getContext('2d');
+        let imageOfPath1 = new Image(); imageOfPath1.src = cfg.trainingPath1Src;
+        imageOfPath1.onload = function () {
+            patternCanvasContex.drawImage(imageOfPath1, 0, 0)
+            //extended data array have color of each pixel in RGBA
+            let patternDataExtended = patternCanvasContex.getImageData(0, 0, cfg.width, cfg.height).data;
+            let i = 0;
+            do {
+                if (patternDataExtended[i] == 0 && 
+                    patternDataExtended[i + 1] == 0 &&
+                    patternDataExtended[i + 2] == 0 &&
+                    patternDataExtended[i + 3] == 0)
+                    patternData[0].push(0);
+                else patternData[0].push(1);
+                i += 4;
+            } while (i < patternDataExtended.length);
+        };
+
+        //to get patternData[1] for training mode
+        let supportingCanvas2 = document.getElementById('supportingCanvas2');
+        supportingCanvas2.setAttribute('width', cfg.width);
+        supportingCanvas2.setAttribute('height', cfg.height);
+        let patternCanvasContex2 = supportingCanvas2.getContext('2d');
+        let imageOfPath2 = new Image(); imageOfPath2.src = cfg.trainingPath2Src; 
+        imageOfPath2.onload = function () {
+            patternCanvasContex2.drawImage(imageOfPath2, 0, 0)
+            //extended data array have color of each pixel in RGBA
+            let patternDataExtended = patternCanvasContex2.getImageData(0, 0, cfg.width, cfg.height).data;
+            let i = 0;
+            do {
+                if (patternDataExtended[i] == 0 && 
+                    patternDataExtended[i + 1] == 0 &&
+                    patternDataExtended[i + 2] == 0 &&
+                    patternDataExtended[i + 3] == 0)
+                    patternData[1].push(0);
+                else patternData[1].push(1);
+                i += 4;
+            } while (i < patternDataExtended.length);
+        };
+        //to get patternData[2] for exam mode
+        let supportingCanvas3 = document.getElementById('supportingCanvas3');
+        supportingCanvas3.setAttribute('width', cfg.width);
+        supportingCanvas3.setAttribute('height', cfg.height);
+        let patternCanvas3Contex = supportingCanvas3.getContext('2d');
+        let imageOfPath3 = new Image(); imageOfPath3.src = cfg.trainingPath3Src;
+        imageOfPath3.onload = function () {
+            patternCanvas3Contex.drawImage(imageOfPath3, 0, 0)
+            //extended data array have color of each pixel in RGBA
+            let patternDataExtended = patternCanvas3Contex.getImageData(0, 0, cfg.width, cfg.height).data;
+            let i = 0;
+            do {
+                if (patternDataExtended[i] == 0 && 
+                    patternDataExtended[i + 1] == 0 &&
+                    patternDataExtended[i + 2] == 0 &&
+                    patternDataExtended[i + 3] == 0)
+                    patternData[2].push(0);
+                else patternData[2].push(1);
+                i += 4;
+            } while (i < patternDataExtended.length);
+        };
+    }
+    //set pen to initial state func
+    function startPenObject() {
+        penObj.rotation.x = simulation.penInitialParams.angleX;
+        penObj.rotation.y = simulation.penInitialParams.angleY;
+        penObj.rotation.z = simulation.penInitialParams.angleZ;
+        penObj.position.x = simulation.penInitialParams.positionX;
+        penObj.position.y = simulation.penInitialParams.positionY;
+        penObj.position.z = simulation.penInitialParams.positionZ;        
+    }; 
 }//onload
