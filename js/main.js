@@ -30,7 +30,7 @@ window.onload = function () {
             exam: false
         },
         dataIndex: 0,
-        changeIndex: false,
+        changeIndex: true,
         penInitialParams : {
             penSize: 49,
             angleX: - (25.0) * Math.PI / 180.0,
@@ -63,6 +63,12 @@ window.onload = function () {
             passPoints: [false, false, false, false, false, false, false, false],
             passExam: ['1237456', '7456123', '3216547', '6547321']
         },
+        trainingCheckPoints: {
+            changePoint: { x: 430, y: 80 },
+            firstChange: { x: 430, y: 240},
+            secondChange: { x: 430, y: 370 },
+            accuracy: 20
+        },
         trajectoryVisibilityTime: 5000,
         examMaxStopTime: 1000
     }
@@ -73,7 +79,6 @@ window.onload = function () {
     patternData.push(); patternData.push(); patternData.push();
     patternData[0] = []; patternData[1] = []; patternData[2] = [];
     getDataFromImages();
-
 
     //main canvas to draw the scene
     let canvas = document.getElementById('canvas');
@@ -380,19 +385,38 @@ window.onload = function () {
     function trainingStage(movementX, movementY) {
         if ((Math.abs(movementX) > 100 || Math.abs(movementY) > 100)) return;
         //запрет перескакивать
+        /*
         if ((Math.abs(movementX) > 10 || Math.abs(movementY) > 10) &&
             (simulation.penCoords.x < 460 && simulation.penCoords.x > 300 &&
                 simulation.penCoords.y > 30 && simulation.penCoords.y < 150)) return;
+                */
         //change index of the pattern data
+
+        if (Math.abs(simulation.penCoords.x - simulation.trainingCheckPoints.changePoint.x) < simulation.trainingCheckPoints.accuracy &&
+            Math.abs(simulation.penCoords.y - simulation.trainingCheckPoints.changePoint.y) < simulation.trainingCheckPoints.accuracy &&
+            !simulation.changeIndex)
+            simulation.changeIndex = true;
+        /*
         if (simulation.penCoords.x < 250 || simulation.penCoords.y > 350) {
             simulation.changeIndex = true;
         }
+        */
+        if ((Math.abs(simulation.penCoords.x - simulation.trainingCheckPoints.firstChange.x) < simulation.trainingCheckPoints.accuracy &&
+            Math.abs(simulation.penCoords.y - simulation.trainingCheckPoints.firstChange.y) < simulation.trainingCheckPoints.accuracy) ||
+            (Math.abs(simulation.penCoords.x - simulation.trainingCheckPoints.secondChange.x) < simulation.trainingCheckPoints.accuracy &&
+                Math.abs(simulation.penCoords.y - simulation.trainingCheckPoints.secondChange.y) < simulation.trainingCheckPoints.accuracy)) {
+            if (simulation.changeIndex) {
+                simulation.changeIndex = false;
+                simulation.dataIndex = simulation.dataIndex == 0 ? 1 : 0;
+            }
+            }
+        /*
         if (simulation.penCoords.x > 370 && simulation.penCoords.x < 400 &&
             simulation.penCoords.y < 120 && simulation.penCoords.y > 55 && simulation.changeIndex) {
             simulation.changeIndex = false;
             simulation.dataIndex = simulation.dataIndex == 0 ? 1 : 0;
         }
-
+        */
         let newPenCoordX = simulation.penCoords.x + movementX;
         let newPenCoordY = simulation.penCoords.y + movementY;
         let k = (newPenCoordX + cfg.width * newPenCoordY); //index in data
