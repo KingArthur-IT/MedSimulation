@@ -51,11 +51,16 @@ window.onload = function () {
             count: 0,
             maxCount: 5,
             inline: true,
-            pointsEps: 15,
+            pointsEps: 30,
             path: '',
             rightPath: true,
             lastMovementTime: 0,
-            nonStop: true
+            nonStop: true,
+            failTime: 0,
+            waitReloadTime: 3000,
+            failColor: 0xff3300,
+            passColor: 0x00ff00,
+            passed: false
         },
         checkpoint: {
             coordsX: [430, 610, 430, 245, 500, 360, 360, 500],
@@ -67,7 +72,7 @@ window.onload = function () {
             changePoint: { x: 430, y: 80 },
             firstChange: { x: 430, y: 240},
             secondChange: { x: 430, y: 370 },
-            accuracy: 20
+            accuracy: 15
         },
         trajectoryVisibilityTime: 5000,
         examMaxStopTime: 1000
@@ -110,7 +115,7 @@ window.onload = function () {
         transparent: true
     });    
     let patternPlaneMesh = new THREE.Mesh(patternPlane, material); 
-    patternPlaneMesh.scale.set(1.6, 1.6, 1.6);
+    patternPlaneMesh.scale.set(1.55, 1.6, 1.6);
     scene.add(patternPlaneMesh);
 
     //objects
@@ -167,6 +172,16 @@ window.onload = function () {
             scene.add(lineObject); scene.add(lineObject2);
             scene.add(lineObject3); scene.add(lineObject4);
         }
+        if (simulation.stages.exam) {
+            //check exam in process or fail
+            if (!(simulation.exam.inline && simulation.exam.rightPath &&
+                simulation.exam.nonStop)) {
+                let time = new Date;
+                if (time - simulation.exam.failTime > simulation.exam.waitReloadTime) {
+                    mouse_down_handler();
+                };
+            };
+        }
         renderer.render(scene, camera);
         requestAnimationFrame(loop)
     };
@@ -198,6 +213,10 @@ window.onload = function () {
             simulation.penCoords.x = cfg.width / 2.0 + simulation.penInitialParams.positionX;
             simulation.penCoords.y = 75;
             simulation.mouse.isDown = true;
+            scene.remove(light);
+            light = new THREE.AmbientLight(0xffffff);
+            scene.add(light);
+            simulation.exam.passed = false;
         }
         else { //unlock
             document.exitPointerLock = document.exitPointerLock    ||
@@ -210,6 +229,24 @@ window.onload = function () {
             trajectoryPoints.length = 0; trajectoryPoints2.length = 0;
             trajectoryPoints3.length = 0; trajectoryPoints4.length = 0;
             trajectoryPointsTime.length = 0;
+            if (simulation.stages.exam) {
+                simulation.exam.count = 0;
+                simulation.exam.inline = true;
+                simulation.exam.rightPath = true;
+                simulation.exam.nonStop = true;
+                simulation.exam.path = '';
+                for (let i = 0; i < simulation.checkpoint.passPoints.length; i++)
+                    simulation.checkpoint.passPoints[i] = false;
+                simulation.exam.rightPath = true;
+                simulation.exam.nonStop = true;
+                simulation.exam.failTime = 0;
+                //light
+                if (!simulation.exam.passed) {
+                    scene.remove(light);
+                    light = new THREE.AmbientLight(0xffffff);
+                    scene.add(light);    
+                }    
+            }        
         }
     }
     function mouse_move_handler(e) {        
@@ -225,15 +262,18 @@ window.onload = function () {
             e.webkitMovementY   ||
             0;
 
+        let newPenCoordX = simulation.penCoords.x + movementX;
+        let newPenCoordY = simulation.penCoords.y + movementY;
         //training mode
         if (simulation.stages.training) {
-            trainingStage(movementX, movementY);
+            if ((Math.abs(movementX) > 100 || Math.abs(movementY) > 100)) return;            
+            trainingStage(newPenCoordX, newPenCoordY);
         };//if (stages.training)
         if (simulation.stages.practice) {
-            practiceStage(movementX, movementY);
+            practiceStage(newPenCoordX, newPenCoordY);
         }//if (stages.practice) 
         if (simulation.stages.exam) {
-            examStage(movementX, movementY);
+            examStage(newPenCoordX, newPenCoordY);
         }
     }
     function lockChange() {
@@ -244,12 +284,15 @@ window.onload = function () {
             if (simulation.stages.exam) {
                 simulation.exam.count = 0;
                 simulation.exam.inline = true;
+                simulation.exam.rightPath = true;
+                simulation.exam.nonStop = true;
                 simulation.exam.path = '';
                 for (let i = 0; i < simulation.checkpoint.passPoints.length; i++)
                     simulation.checkpoint.passPoints[i] = false;
                 simulation.exam.rightPath = true;
                 simulation.exam.nonStop = true;
                 simulation.exam.lastMovementTime = new Date();
+                simulation.exam.failTime = 0;
             }
         } else {
             console.log('The pointer lock status is now unlocked');
@@ -292,33 +335,50 @@ window.onload = function () {
                 simulation.exam.rightPath = true;
                 simulation.exam.nonStop = true;
                 simulation.exam.lastMovementTime = new Date();
-            }
+        }
+        if (simulation.stages.exam) {
+            scene.remove(light);
+            light = new THREE.AmbientLight(0xffffff);
+            scene.add(light);
+            simulation.exam.passed = false;
+            simulation.exam.count = 0;
+            simulation.exam.inline = true;
+            simulation.exam.rightPath = true;
+            simulation.exam.nonStop = true;
+            simulation.exam.path = '';
+            for (let i = 0; i < simulation.checkpoint.passPoints.length; i++)
+                simulation.checkpoint.passPoints[i] = false;
+            simulation.exam.rightPath = true;
+            simulation.exam.nonStop = true;
+            simulation.exam.lastMovementTime = new Date();
+            simulation.exam.failTime = 0;
+        }
     }
     function touch_move_handler(e) {
         e.preventDefault();
         if (!simulation.mouse.isDown) return;        
         
-        simulation.mouse.endX = simulation.mouse.startX;
-        simulation.mouse.endY = simulation.mouse.startY;
+        //simulation.mouse.endX = simulation.mouse.startX;
+        //simulation.mouse.endY = simulation.mouse.startY;
         
         let evt = (typeof e.originalEvent === 'undefined') ? e : e.originalEvent;
         let touch = evt.touches[0] || evt.changedTouches[0];
 
-        simulation.mouse.startX = touch.pageX;
-        simulation.mouse.startY = touch.pageY;
+        //simulation.mouse.startX = touch.pageX;
+        //simulation.mouse.startY = touch.pageY;
 
-        let movementX = touch.pageX;
-        let movementY = touch.pageY;
+        let newPosX = touch.pageX;
+        let newPosY = touch.pageY;
         
         //training mode
         if (simulation.stages.training) {
-            trainingStageTouch(movementX, movementY);
+            trainingStage(newPosX, newPosY);
         };//if (stages.training)
         if (simulation.stages.practice) {
-            practiceStageTouch(movementX, movementY);
+            practiceStage(newPosX, newPosY);
         }//if (stages.practice) 
         if (simulation.stages.exam) {
-            examStageTouch(movementX, movementY);
+            examStage(newPosX, newPosY);
         }
         
     }
@@ -336,7 +396,23 @@ window.onload = function () {
         if (simulation.stages.exam) {
             if (document.getElementById('examText').value != "Экзамен сдан")
                 document.getElementById('examText').value = "Начните экзамен";
-           }
+                simulation.exam.count = 0;
+                simulation.exam.inline = true;
+                simulation.exam.rightPath = true;
+                simulation.exam.nonStop = true;
+                simulation.exam.path = '';
+                for (let i = 0; i < simulation.checkpoint.passPoints.length; i++)
+                    simulation.checkpoint.passPoints[i] = false;
+                simulation.exam.rightPath = true;
+                simulation.exam.nonStop = true;
+                simulation.exam.failTime = 0;
+                //light
+                if (!simulation.exam.passed) {
+                    scene.remove(light);
+                    light = new THREE.AmbientLight(0xffffff);
+                    scene.add(light);    
+                }    
+        }
     }       
 
     let stageBtn = document.getElementById('stageBtn');
@@ -382,25 +458,13 @@ window.onload = function () {
         if (!Number.isNaN(xAngle))
             penObj.rotation.x = xAngle;
     }
-    function trainingStage(movementX, movementY) {
-        if ((Math.abs(movementX) > 100 || Math.abs(movementY) > 100)) return;
-        //запрет перескакивать
-        /*
-        if ((Math.abs(movementX) > 10 || Math.abs(movementY) > 10) &&
-            (simulation.penCoords.x < 460 && simulation.penCoords.x > 300 &&
-                simulation.penCoords.y > 30 && simulation.penCoords.y < 150)) return;
-                */
+    function trainingStage(newPenCoordX, newPenCoordY) {
         //change index of the pattern data
-
-        if (Math.abs(simulation.penCoords.x - simulation.trainingCheckPoints.changePoint.x) < simulation.trainingCheckPoints.accuracy &&
-            Math.abs(simulation.penCoords.y - simulation.trainingCheckPoints.changePoint.y) < simulation.trainingCheckPoints.accuracy &&
+        if (Math.abs(simulation.penCoords.x - simulation.trainingCheckPoints.changePoint.x) < 2.5 * simulation.trainingCheckPoints.accuracy &&
+            Math.abs(simulation.penCoords.y - simulation.trainingCheckPoints.changePoint.y) < 2.5 * simulation.trainingCheckPoints.accuracy &&
             !simulation.changeIndex)
             simulation.changeIndex = true;
-        /*
-        if (simulation.penCoords.x < 250 || simulation.penCoords.y > 350) {
-            simulation.changeIndex = true;
-        }
-        */
+
         if ((Math.abs(simulation.penCoords.x - simulation.trainingCheckPoints.firstChange.x) < simulation.trainingCheckPoints.accuracy &&
             Math.abs(simulation.penCoords.y - simulation.trainingCheckPoints.firstChange.y) < simulation.trainingCheckPoints.accuracy) ||
             (Math.abs(simulation.penCoords.x - simulation.trainingCheckPoints.secondChange.x) < simulation.trainingCheckPoints.accuracy &&
@@ -410,15 +474,7 @@ window.onload = function () {
                 simulation.dataIndex = simulation.dataIndex == 0 ? 1 : 0;
             }
             }
-        /*
-        if (simulation.penCoords.x > 370 && simulation.penCoords.x < 400 &&
-            simulation.penCoords.y < 120 && simulation.penCoords.y > 55 && simulation.changeIndex) {
-            simulation.changeIndex = false;
-            simulation.dataIndex = simulation.dataIndex == 0 ? 1 : 0;
-        }
-        */
-        let newPenCoordX = simulation.penCoords.x + movementX;
-        let newPenCoordY = simulation.penCoords.y + movementY;
+        
         let k = (newPenCoordX + cfg.width * newPenCoordY); //index in data
         if (patternData[simulation.dataIndex][k] == 1) 
             movePen(newPenCoordX, newPenCoordY, simulation.maxPixelPenRadius);      
@@ -433,14 +489,22 @@ window.onload = function () {
                 else {
                     k = (newPenCoordX + cfg.width * (newPenCoordY + 8));
                     if (patternData[simulation.dataIndex][k] == 1) 
-                        movePen(newPenCoordX, newPenCoordY + 8, simulation.maxPixelPenRadius);
-                }
+                        movePen(newPenCoordX, newPenCoordY + 7, simulation.maxPixelPenRadius);
+                    else {
+                        k = (newPenCoordX + cfg.width * (newPenCoordY - 8));
+                        if (patternData[simulation.dataIndex][k] == 1) 
+                            movePen(newPenCoordX, newPenCoordY - 7, simulation.maxPixelPenRadius);
+                        else {
+                            k = ((newPenCoordX + 10) + cfg.width * newPenCoordY);
+                            if (patternData[simulation.dataIndex][k] == 1) 
+                                movePen((newPenCoordX + 10), newPenCoordY, simulation.maxPixelPenRadius);
+                            }
+                        } 
+                    }
                 }
             }
     }
-    function practiceStage(movementX, movementY) {
-        let newPenCoordX = simulation.penCoords.x + movementX;
-        let newPenCoordY = simulation.penCoords.y + movementY;
+    function practiceStage(newPenCoordX, newPenCoordY) {
         movePen(newPenCoordX, newPenCoordY, simulation.maxPixelPenRadius);
         //draw line 
         let lineX = 280.0 * (simulation.penCoords.x - 0.5 * cfg.width) / (0.5 * cfg.width);
@@ -451,29 +515,46 @@ window.onload = function () {
         trajectoryPoints4.push(new THREE.Vector3(lineX - 0.5, lineY, 600));
         trajectoryPointsTime.push(new Date);
     }
-    function examStage(movementX, movementY) {
+    function examStage(newPenCoordX, newPenCoordY) {
         let inputText = document.getElementById('examText');
-        
+        //current time
         let time = new Date;
-
-        if (time - simulation.exam.lastMovementTime > simulation.examMaxStopTime) {
-            simulation.exam.nonStop = false;
-            inputText.value = "Запрещены остановки";
-        } else simulation.exam.lastMovementTime = new Date();
-
-        let newPenCoordX = simulation.penCoords.x + movementX;
-        let newPenCoordY = simulation.penCoords.y + movementY;
-        movePen(newPenCoordX, newPenCoordY, simulation.maxPixelPenRadius);
         
+        //move
+        movePen(newPenCoordX, newPenCoordY, simulation.maxPixelPenRadius);
+
+        //check exam in process or fail
         if (simulation.exam.inline && simulation.exam.rightPath &&
             simulation.exam.nonStop)
             inputText.value = "Верных движений: " + simulation.exam.count;
-        else return;
+        else {
+            if (time - simulation.exam.failTime > simulation.exam.waitReloadTime) {                
+                mouse_down_handler();
+            }
+            return;
+        };
+      
+        //non stop
+        if (time - simulation.exam.lastMovementTime > simulation.examMaxStopTime) {
+            simulation.exam.nonStop = false;
+            simulation.exam.failTime = new Date;
+            inputText.value = "Запрещены остановки";
+            //red light
+            scene.remove(light);
+            light = new THREE.AmbientLight(simulation.exam.failColor);
+            scene.add(light);
+        } else simulation.exam.lastMovementTime = new Date();
             
+        //if exam in process
         let k = (newPenCoordX + cfg.width * newPenCoordY); //index in data
         if (patternData[2][k] == 0) {
             simulation.exam.inline = false;
+            simulation.exam.failTime = new Date;
             inputText.value = "Выход за пределы";
+            //red light
+            scene.remove(light);
+            light = new THREE.AmbientLight(simulation.exam.failColor);
+            scene.add(light);
         }
         //path
         let allPoint = true;
@@ -504,7 +585,12 @@ window.onload = function () {
                 document.getElementById('examText').value = "Верных движений: " + simulation.exam.count;
             } else {
                 simulation.exam.rightPath = false;
+                simulation.exam.failTime = new Date;
                 document.getElementById('examText').value = "Траектория не верная";
+                //red light
+                scene.remove(light);
+                light = new THREE.AmbientLight(simulation.exam.failColor);
+                scene.add(light);
             }            
         }//if 
         //pass
@@ -512,114 +598,12 @@ window.onload = function () {
             simulation.exam.inline && simulation.exam.rightPath &&
             simulation.exam.nonStop) {
             document.getElementById('examText').value = "Экзамен сдан";
-            }
-    }//exam function
-    function trainingStageTouch(x, y) {
-        //change index of the pattern data
-        if (simulation.penCoords.x < 250 || simulation.penCoords.y > 350) {
-            simulation.changeIndex = true;
-        }
-        if (simulation.penCoords.x > 370 && simulation.penCoords.x < 400 &&
-            simulation.penCoords.y < 120 && simulation.penCoords.y > 55 && simulation.changeIndex) {
-            simulation.changeIndex = false;
-            simulation.dataIndex = simulation.dataIndex == 0 ? 1 : 0;
-        }
-
-        let newPenCoordX = x;
-        let newPenCoordY = y;
-        let k = (newPenCoordX + cfg.width * newPenCoordY); //index in data
-        if (patternData[simulation.dataIndex][k] == 1) 
-            movePen(newPenCoordX, newPenCoordY, simulation.maxPixelPenRadius);      
-        else {
-            k = (newPenCoordX + cfg.width * (newPenCoordY + 3));
-            if (patternData[simulation.dataIndex][k] == 1) 
-                movePen(newPenCoordX, newPenCoordY + 3, simulation.maxPixelPenRadius);
-            else {
-                k = (newPenCoordX + cfg.width * (newPenCoordY - 3));
-                if (patternData[simulation.dataIndex][k] == 1) 
-                    movePen(newPenCoordX, newPenCoordY - 3, simulation.maxPixelPenRadius);
-                else {
-                    k = (newPenCoordX + cfg.width * (newPenCoordY + 8));
-                    if (patternData[simulation.dataIndex][k] == 1) 
-                        movePen(newPenCoordX, newPenCoordY + 8, simulation.maxPixelPenRadius);
-                }
-                }
-            }
-    }
-    function practiceStageTouch(x, y) {
-        let newPenCoordX = x;
-        let newPenCoordY = y;
-        movePen(newPenCoordX, newPenCoordY, simulation.maxPixelPenRadius);
-        //draw line 
-        let lineX = 280.0 * (simulation.penCoords.x - 0.5 * cfg.width) / (0.5 * cfg.width);
-        let lineY = -150.0 * (simulation.penCoords.y - 0.5 * cfg.height) / (0.5 * cfg.height);
-        trajectoryPoints.push(new THREE.Vector3(lineX, lineY, 600));
-        trajectoryPoints2.push(new THREE.Vector3(lineX, lineY + 0.5, 600));
-        trajectoryPoints3.push(new THREE.Vector3(lineX, lineY - 0.5, 600));
-        trajectoryPoints4.push(new THREE.Vector3(lineX - 0.5, lineY, 600));
-        trajectoryPointsTime.push(new Date);
-    }
-    function examStageTouch(x, y) {
-        let inputText = document.getElementById('examText');
-
-        let time = new Date;
-
-        if (time - simulation.exam.lastMovementTime > simulation.examMaxStopTime) {
-            simulation.exam.nonStop = false;
-            inputText.value = "Запрещены остановки";
-        } else simulation.exam.lastMovementTime = new Date();
-
-        let newPenCoordX = x;
-        let newPenCoordY = y;
-        movePen(newPenCoordX, newPenCoordY, simulation.maxPixelPenRadius);
-        
-        if (simulation.exam.inline && simulation.exam.rightPath &&
-            simulation.exam.nonStop)
-            inputText.value = "Верных движений: " + simulation.exam.count;
-        else return;
-            
-        let k = (newPenCoordX + cfg.width * newPenCoordY); //index in data
-        if (patternData[2][k] == 0) {
-            simulation.exam.inline = false;
-            inputText.value = "Выход за пределы";
-        }
-        //path
-        let allPoint = true;
-        for (let i = 1; i < simulation.checkpoint.coordsX.length; i++){
-            if (Math.abs(newPenCoordX - simulation.checkpoint.coordsX[i]) < simulation.exam.pointsEps &&
-                Math.abs(newPenCoordY - simulation.checkpoint.coordsY[i]) < simulation.exam.pointsEps &&
-                !simulation.checkpoint.passPoints[i]) {
-                simulation.checkpoint.passPoints[i] = true;
-                simulation.exam.path += i;
-            }//if
-            if (!simulation.checkpoint.passPoints[i])
-                allPoint = false;
-        }
-        //count
-        if (Math.abs(newPenCoordX - simulation.checkpoint.coordsX[0]) < simulation.exam.pointsEps &&
-            Math.abs(newPenCoordY - simulation.checkpoint.coordsY[0]) < simulation.exam.pointsEps &&
-            allPoint) {
-            if (
-                simulation.exam.path == simulation.checkpoint.passExam[0] ||
-                simulation.exam.path == simulation.checkpoint.passExam[1] ||
-                simulation.exam.path == simulation.checkpoint.passExam[2] ||
-                simulation.exam.path == simulation.checkpoint.passExam[3]
-            ) {
-                simulation.exam.count += 1;
-                simulation.exam.path = '';
-                for (let i = 0; i < 8; i++)
-                    simulation.checkpoint.passPoints[i] = false;
-                document.getElementById('examText').value = "Верных движений: " + simulation.exam.count;
-            } else {
-                simulation.exam.rightPath = false;
-                document.getElementById('examText').value = "Траектория не верная";
-            }            
-        }//if 
-        //pass
-        if (simulation.exam.count == simulation.exam.maxCount &&
-            simulation.exam.inline && simulation.exam.rightPath &&
-            simulation.exam.nonStop) {
-            document.getElementById('examText').value = "Экзамен сдан";
+            //green light
+            scene.remove(light);
+            light = new THREE.AmbientLight(simulation.exam.passColor);
+            scene.add(light);
+            simulation.exam.passed = true;
+            mouse_down_handler();
             }
     }//exam function
     function getDataFromImages() {
