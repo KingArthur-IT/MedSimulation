@@ -71,7 +71,7 @@ window.onload = function () {
         trainingCheckPoints: {
             changePoint: { x: 430, y: 80 },
             firstChange: { x: 430, y: 240},
-            secondChange: { x: 430, y: 370 },
+            secondChange: { x: 430, y: 375 },
             accuracy: 15
         },
         trajectoryVisibilityTime: 5000,
@@ -471,6 +471,7 @@ window.onload = function () {
                 Math.abs(simulation.penCoords.y - simulation.trainingCheckPoints.secondChange.y) < simulation.trainingCheckPoints.accuracy)) {
             if (simulation.changeIndex) {
                 simulation.changeIndex = false;
+                console.log(simulation.changeIndex, simulation.dataIndex)
                 simulation.dataIndex = simulation.dataIndex == 0 ? 1 : 0;
             }
             }
