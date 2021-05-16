@@ -471,7 +471,6 @@ window.onload = function () {
                 Math.abs(simulation.penCoords.y - simulation.trainingCheckPoints.secondChange.y) < simulation.trainingCheckPoints.accuracy)) {
             if (simulation.changeIndex) {
                 simulation.changeIndex = false;
-                console.log(simulation.changeIndex, simulation.dataIndex)
                 simulation.dataIndex = simulation.dataIndex == 0 ? 1 : 0;
             }
             }
