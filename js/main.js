@@ -30,7 +30,6 @@ window.onload = function () {
             exam: false
         },
         dataIndex: 0,
-        changeIndex: true,
         penInitialParams : {
             penSize: 49,
             angleX: - (25.0) * Math.PI / 180.0,
@@ -72,7 +71,7 @@ window.onload = function () {
             changePoint: { x: 430, y: 80 },
             firstChange: { x: 430, y: 240},
             secondChange: { x: 430, y: 375 },
-            accuracy: 15
+            accuracy: 10
         },
         trajectoryVisibilityTime: 5000,
         examMaxStopTime: 1000
@@ -250,7 +249,6 @@ window.onload = function () {
         }
     }
     function mouse_move_handler(e) {        
-        //console.log(e.x, e.y)
         if (!simulation.mouse.isDown) return; 
         //get movement of the mouse in lock API
         let movementX = e.movementX ||
@@ -266,7 +264,7 @@ window.onload = function () {
         let newPenCoordY = simulation.penCoords.y + movementY;
         //training mode
         if (simulation.stages.training) {
-            if ((Math.abs(movementX) > 100 || Math.abs(movementY) > 100)) return;            
+            if ((Math.abs(movementX) > 50 || Math.abs(movementY) > 50)) return;            
             trainingStage(newPenCoordX, newPenCoordY);
         };//if (stages.training)
         if (simulation.stages.practice) {
@@ -304,7 +302,6 @@ window.onload = function () {
             trajectoryPoints3.length = 0;
             trajectoryPoints4.length = 0;
             trajectoryPointsTime.length = 0;
-            simulation.changeIndex = false;
             if (simulation.stages.exam) {
                 if (document.getElementById('examText').value != "Экзамен сдан")
                     document.getElementById('examText').value = "Начните экзамен";
@@ -323,8 +320,8 @@ window.onload = function () {
 
         if (Math.abs(touch.pageX - getPenX) < eps && Math.abs(touch.pageY - getPenY) < eps) {
             simulation.mouse.isDown = true;            
-            simulation.mouse.startX = touch.pageX;
-            simulation.mouse.startY = touch.pageY;
+            //simulation.mouse.startX = touch.pageX;
+            //simulation.mouse.startY = touch.pageY;
         }
         if (simulation.stages.exam) {
                 simulation.exam.count = 0;
@@ -392,7 +389,6 @@ window.onload = function () {
         trajectoryPoints3.length = 0;
         trajectoryPoints4.length = 0;
         trajectoryPointsTime.length = 0;
-        simulation.changeIndex = false;
         if (simulation.stages.exam) {
             if (document.getElementById('examText').value != "Экзамен сдан")
                 document.getElementById('examText').value = "Начните экзамен";
@@ -460,19 +456,17 @@ window.onload = function () {
     }
     function trainingStage(newPenCoordX, newPenCoordY) {
         //change index of the pattern data
-        if (Math.abs(simulation.penCoords.x - simulation.trainingCheckPoints.changePoint.x) < 2.5 * simulation.trainingCheckPoints.accuracy &&
-            Math.abs(simulation.penCoords.y - simulation.trainingCheckPoints.changePoint.y) < 2.5 * simulation.trainingCheckPoints.accuracy &&
-            !simulation.changeIndex)
-            simulation.changeIndex = true;
-
-        if ((Math.abs(simulation.penCoords.x - simulation.trainingCheckPoints.firstChange.x) < simulation.trainingCheckPoints.accuracy &&
-            Math.abs(simulation.penCoords.y - simulation.trainingCheckPoints.firstChange.y) < simulation.trainingCheckPoints.accuracy) ||
-            (Math.abs(simulation.penCoords.x - simulation.trainingCheckPoints.secondChange.x) < simulation.trainingCheckPoints.accuracy &&
-                Math.abs(simulation.penCoords.y - simulation.trainingCheckPoints.secondChange.y) < simulation.trainingCheckPoints.accuracy)) {
-            if (simulation.changeIndex) {
-                simulation.changeIndex = false;
+        let eps = simulation.trainingCheckPoints.accuracy; 
+        if ((Math.abs(newPenCoordX - simulation.trainingCheckPoints.firstChange.x) < eps &&
+            Math.abs(newPenCoordY - simulation.trainingCheckPoints.firstChange.y) < 3.0 * eps) ||
+            (Math.abs(newPenCoordX - simulation.trainingCheckPoints.secondChange.x) < eps &&
+                Math.abs(newPenCoordY - simulation.trainingCheckPoints.secondChange.y) < 3.0 * eps)) {
+            
+                let sign = Math.sign(simulation.trainingCheckPoints.firstChange.x - simulation.penCoords.x);
+                newPenCoordX += sign * 2.0 * eps;
                 simulation.dataIndex = simulation.dataIndex == 0 ? 1 : 0;
-            }
+                movePen(newPenCoordX, newPenCoordY, simulation.maxPixelPenRadius);
+                return;
             }
         
         let k = (newPenCoordX + cfg.width * newPenCoordY); //index in data
