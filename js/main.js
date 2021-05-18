@@ -56,7 +56,7 @@ window.onload = function () {
             lastMovementTime: 0,
             nonStop: true,
             failTime: 0,
-            waitReloadTime: 3000,
+            waitReloadTime: 1000,
             failColor: 0xff3300,
             passColor: 0x00ff00,
             passed: false
@@ -278,7 +278,7 @@ window.onload = function () {
         if(document.pointerLockElement === canvas ||
         document.mozPointerLockElement === canvas ||
         document.webkitPointerLockElement === canvas) {
-            console.log('The pointer lock status is now locked');
+            //console.log('The pointer lock status is now locked');
             if (simulation.stages.exam) {
                 simulation.exam.count = 0;
                 simulation.exam.inline = true;
@@ -293,7 +293,7 @@ window.onload = function () {
                 simulation.exam.failTime = 0;
             }
         } else {
-            console.log('The pointer lock status is now unlocked');
+            //console.log('The pointer lock status is now unlocked');
             simulation.mouse.isDown = false;
             startPenObject();
             simulation.dataIndex = 0;
@@ -303,8 +303,8 @@ window.onload = function () {
             trajectoryPoints4.length = 0;
             trajectoryPointsTime.length = 0;
             if (simulation.stages.exam) {
-                if (document.getElementById('examText').value != "Экзамен сдан")
-                    document.getElementById('examText').value = "Начните экзамен";
+                if (document.getElementById('examText').value != "Exam passed!")
+                    document.getElementById('examText').value = "Start Exam";
             }
         }
     }
@@ -390,8 +390,8 @@ window.onload = function () {
         trajectoryPoints4.length = 0;
         trajectoryPointsTime.length = 0;
         if (simulation.stages.exam) {
-            if (document.getElementById('examText').value != "Экзамен сдан")
-                document.getElementById('examText').value = "Начните экзамен";
+            if (document.getElementById('examText').value != "Exam passed!")
+                document.getElementById('examText').value = "Start exam";
                 simulation.exam.count = 0;
                 simulation.exam.inline = true;
                 simulation.exam.rightPath = true;
@@ -417,7 +417,7 @@ window.onload = function () {
             simulation.stages.training = false;
             simulation.stages.practice = true;
             simulation.stages.exam = false;
-            stageBtn.value = "Перейти к экзамену";
+            stageBtn.value = "Start Exam";
             simulation.mouse.isDown = false;
         }
         else if (simulation.stages.practice) {
@@ -428,7 +428,7 @@ window.onload = function () {
                 simulation.mouse.isDown = false;
                 let inputText = document.getElementById('examText');
                 inputText.style.display = 'block';
-                inputText.value = "Начните экзамен";
+                //inputText.value = "Start Exam";
                 simulation.exam.rightPath = true;
             };
     })
@@ -512,15 +512,17 @@ window.onload = function () {
     function examStage(newPenCoordX, newPenCoordY) {
         let inputText = document.getElementById('examText');
         //current time
-        let time = new Date;
-        
+        let time = new Date;        
         //move
         movePen(newPenCoordX, newPenCoordY, simulation.maxPixelPenRadius);
+
+        if (simulation.exam.passed)
+            return;
 
         //check exam in process or fail
         if (simulation.exam.inline && simulation.exam.rightPath &&
             simulation.exam.nonStop)
-            inputText.value = "Верных движений: " + simulation.exam.count;
+            inputText.value = "Round comleted " + simulation.exam.count + '/' + simulation.exam.maxCount;
         else {
             if (time - simulation.exam.failTime > simulation.exam.waitReloadTime) {                
                 mouse_down_handler();
@@ -532,7 +534,7 @@ window.onload = function () {
         if (time - simulation.exam.lastMovementTime > simulation.examMaxStopTime) {
             simulation.exam.nonStop = false;
             simulation.exam.failTime = new Date;
-            inputText.value = "Запрещены остановки";
+            inputText.value = "No stops allowed";
             //red light
             scene.remove(light);
             light = new THREE.AmbientLight(simulation.exam.failColor);
@@ -544,7 +546,7 @@ window.onload = function () {
         if (patternData[2][k] == 0) {
             simulation.exam.inline = false;
             simulation.exam.failTime = new Date;
-            inputText.value = "Выход за пределы";
+            inputText.value = "Wrong Trajectory";
             //red light
             scene.remove(light);
             light = new THREE.AmbientLight(simulation.exam.failColor);
@@ -576,11 +578,11 @@ window.onload = function () {
                 simulation.exam.path = '';
                 for (let i = 0; i < 8; i++)
                     simulation.checkpoint.passPoints[i] = false;
-                document.getElementById('examText').value = "Верных движений: " + simulation.exam.count;
+                document.getElementById('examText').value = "Round comleted " + simulation.exam.count + '/' + simulation.exam.maxCount;
             } else {
                 simulation.exam.rightPath = false;
                 simulation.exam.failTime = new Date;
-                document.getElementById('examText').value = "Траектория не верная";
+                document.getElementById('examText').value = "Wrong Trajectory";
                 //red light
                 scene.remove(light);
                 light = new THREE.AmbientLight(simulation.exam.failColor);
@@ -591,13 +593,13 @@ window.onload = function () {
         if (simulation.exam.count == simulation.exam.maxCount &&
             simulation.exam.inline && simulation.exam.rightPath &&
             simulation.exam.nonStop) {
-            document.getElementById('examText').value = "Экзамен сдан";
+            document.getElementById('examText').value = "Exam passed!";
             //green light
             scene.remove(light);
             light = new THREE.AmbientLight(simulation.exam.passColor);
             scene.add(light);
             simulation.exam.passed = true;
-            mouse_down_handler();
+            //mouse_down_handler();
             }
     }//exam function
     function getDataFromImages() {
