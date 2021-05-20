@@ -11,48 +11,116 @@
         margin: 0;
         padding: 0;
         overflow: hidden;
+        font-family: "Lucida Sans Unicode", "Lucida Grande", sans-serif;
       }
       #canvas {
         background: #000;
       }
-      #supportingCanvas, #supportingCanvas2, #supportingCanvas3 {
+      #supportingCanvas,
+      #supportingCanvas2,
+      #supportingCanvas3 {
         display: none;
       }
-      #stageBtn{
-        position: absolute;
-        top: 400px;
-        left: 670px;
-        padding: 1%;
-        background-color: transparent;
+      #stageBtn {
+        top: 410px;
+        left: 740px;
         font-size: 14px;
-        font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
-        cursor: pointer;
-        color: rgb(50, 50, 50);
-        border: 1px solid rgba(14, 11, 11, 0.3);
-        box-shadow: 1px 0px 0px 0px rgba(50,50,50,0.3);
-        width: 150px;
+        width: 100px;
+        display: none;
       }
-      #examText{
+      #examText {
         position: absolute;
         top: 400px;
-        left: 650px;
+        left: 620px;
         padding: 1%;
         background-color: transparent;
-        font-size: 14px;
-        font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+        font-size: 16px;
+        font-family: "Lucida Sans Unicode", "Lucida Grande", sans-serif;
         color: rgb(50, 50, 50);
-        border: 1px solid rgba(50,50,50,0.3);
-        box-shadow: 1px 0px 0px 0px rgba(50,50,50,0.3);
-        width: 150px;
+        border: none;
+        width: 180px;
         display: none;
         text-align: center;
+        color: #000;
+        letter-spacing: .5px;
+        outline: none;
+      }
+      .interface-text{
+        position: absolute;
+        background-color: transparent;
+        border: none;
+        letter-spacing: .5px;
+        outline: none;
+      }
+      .btn{
+        position: absolute;
+        background-color: rgb(122, 122, 122);
+        border: 2px solid rgb(122, 122, 122);
+        transition: border 0.3s ease-in;
+        cursor: pointer;
+        color: #fff;
+        padding: 2px;
+        border-radius: 5px;
+        letter-spacing: .5px;
+      }
+      .btn:hover{
+        border: 2px solid rgb(62, 62, 62);
+      }
+      #title{        
+        top: 10px;
+        left: 10px;
+        font-size: 14px;
+        color: #fff;
+      }
+      #popupTitle{
+          left: 300px;
+          top: 138px;
+          font-size: 9px;
+          color: #fff;
+      }
+      #popupText{
+        left: 285px;
+        top: 160px;
+        font-size: 9px;
+        text-align: justify;
+        width: 275px;
+      }
+      #popupBtn{
+        left: 370px;
+        top: 258px;
+        font-size: 10px;
+        width: 100px;
+      }
+      #helpText{
+        position: absolute;
+        outline: none;
+        font-size: 9px;
+        color: #fff;
+        left: 270px;
+        top: 200px;
+        border: none;
+        background: transparent;
+        font-size: 55px;
+        display: none;
+        user-select: none;
+        pointer-events:none;
       }
     </style>
   </head>
   <body>
     <canvas id="canvas"></canvas>
-    <input type="button" value="Start Practice" id="stageBtn">
-    <input type="text" name="" id="examText" value="Start Exam" readonly>
+    <input type="button"  id="stageBtn" value="Proceed" class="btn" />
+    <input type="text"    id="examText" value=""  readonly />
+    <input type="text"    id="title"    value="Training"   class="interface-text" readonly />
+    <!--popup-->
+    <input type="text"    id="popupTitle"   value="Training instructions"  class="interface-text"  readonly />
+    <textarea id="popupText" cols="30" rows="10" class="interface-text"  readonly>
+      You start with Training - single click anywhere on the screen to 'grab' the tool and try moving it following the path.
+      You can't go wrong on this stage - the tool is forced to follow the path. Release the tool with the mouse click. Then click the button on the bottom right to advance to the next stage.
+    </textarea>
+    <input type="button"  id="popupBtn" class="btn" value="Ok" />
+    <!---->
+    <input type="text" id="helpText" value="Click to start" readonly />
     <canvas id="supportingCanvas"></canvas>
     <canvas id="supportingCanvas2"></canvas>
     <canvas id="supportingCanvas3"></canvas>

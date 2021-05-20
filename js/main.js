@@ -6,6 +6,7 @@ window.onload = function () {
         centerX: 425,
         centerY: 225,
         pathSrc: './assets/img/path.png',
+        popupSrc: './assets/img/popup.png',
         trainingPath1Src: './assets/img/path1.png',
         trainingPath2Src: './assets/img/path2.png',
         trainingPath3Src: './assets/img/pathExam.png',
@@ -13,7 +14,9 @@ window.onload = function () {
         modelsPath: './assets/models/'
     }
     let simulation = {
-        penCoords : {
+        active: false,
+        waitBtnVisibility: 10000,
+        penCoords: {
             x: 0,
             y: 0
         },
@@ -21,8 +24,8 @@ window.onload = function () {
             isDown: false,
             startX: 0,
             startY: 0,
-            endX:   0,
-            endY:   0
+            endX: 0,
+            endY: 0
         },
         stages: {
             training: true,
@@ -30,9 +33,9 @@ window.onload = function () {
             exam: false
         },
         dataIndex: 2,
-        penInitialParams : {
+        penInitialParams: {
             penSize: 49,
-            angleX: - (25.0) * Math.PI / 180.0,
+            angleX: - (23.0) * Math.PI / 180.0,
             angleY: 0.0,
             angleZ: 0.0,
             positionX: 6,
@@ -41,12 +44,12 @@ window.onload = function () {
         },
         penTopCoord: {
             x: 431,
-            y: 75,
+            y: 85,
             accuracy: 15
         },
-        maxPenAngle: (26.0) * Math.PI / 180.0,
+        maxPenAngle: (25.0) * Math.PI / 180.0,
         maxPixelPenRadius: 200,
-        exam : {
+        exam: {
             count: 0,
             maxCount: 3,
             inline: true,
@@ -59,7 +62,8 @@ window.onload = function () {
             waitReloadTime: 1000,
             failColor: 0xff3300,
             passColor: 0x00ff00,
-            passed: false
+            passed: false,
+            redPenTime: 2000
         },
         checkpoint: {
             coordsX: [430, 610, 430, 245, 500, 360, 360, 500],
@@ -71,13 +75,17 @@ window.onload = function () {
         },
         trainingCheckPoints: {
             startPoint: { x: 430, y: 80 },
-            firstChange: { x: 430, y: 240},
+            firstChange: { x: 430, y: 240 },
             secondChange: { x: 430, y: 375 },
-            accuracy: 10
+            accuracy: 5
         },
         trajectoryVisibilityTime: 5000,
-        examMaxStopTime: 1000
-    }
+        examMaxStopTime: 1000,
+        practice: {
+            lineXTransform: 280,
+            lineYTransform: -140,
+        }
+    };
 
     //data 850x450 of 0 and 1. where 0 - no path in coord, 1 - has path 
     // [0] and [1] for training mode, [2] - full path for exam mode
@@ -116,8 +124,20 @@ window.onload = function () {
         transparent: true
     });    
     let patternPlaneMesh = new THREE.Mesh(patternPlane, material); 
-    patternPlaneMesh.scale.set(1.55, 1.6, 1.6);
+    patternPlaneMesh.scale.set(1.55, 1.55, 1.6);
     scene.add(patternPlaneMesh);
+
+    //popup
+    const popupPlane = new THREE.PlaneGeometry(cfg.width, cfg.height, 10.0);
+    loader = new THREE.TextureLoader();
+    material = new THREE.MeshBasicMaterial({
+        map: loader.load(cfg.popupSrc, function (texture) {
+            texture.minFilter = THREE.LinearFilter; }),
+        transparent: true
+    });    
+    let popupPlaneMesh = new THREE.Mesh(popupPlane, material); 
+    //popupPlaneMesh.scale.set(1.55, 1.55, 1.6);
+    scene.add(popupPlaneMesh);
 
     //objects
     let penObj = new THREE.Object3D();
@@ -134,10 +154,10 @@ window.onload = function () {
                 simulation.penInitialParams.penSize, simulation.penInitialParams.penSize);
             object.position.set(0, 0, 0);
             object.rotation.set(Math.PI / 2.0, 10, 0);
-            penObj.add(object);
-            scene.add(penObj);
+            penObj.add(object);            
         });
     });
+    //scene.add(penObj);
     startPenObject();
 
     //trajectory line for practice stage
@@ -184,6 +204,11 @@ window.onload = function () {
                 simulation.exam.failTime = new Date;
                 document.getElementById('examText').value = "No stops allowed";
                 setLight(simulation.exam.failColor); //red light
+                setTimeout(() => {
+                    restartSimulationParms();
+                    setLight(0xffffff);
+                    simulation.exam.lastMovementTime = 0;
+                }, simulation.exam.redPenTime);
             };
             //check exam in process or fail - wait 1 sec to reboot
             if (!(simulation.exam.inline && simulation.exam.rightPath &&
@@ -216,14 +241,16 @@ window.onload = function () {
     };
     
     function mouse_down_handler() {
+        if (!simulation.active) return;
+        document.getElementById('helpText').style.display = 'none';
         if (!simulation.mouse.isDown) {//lock and start
             canvas.requestPointerLock = canvas.requestPointerLock ||
                 canvas.mozRequestPointerLock ||
                 canvas.webkitRequestPointerLock;
             canvas.requestPointerLock();
             simulation.mouse.isDown = true;
-            simulation.penCoords.x = cfg.width / 2.0 + simulation.penInitialParams.positionX;
-            simulation.penCoords.y = 75;
+            simulation.penCoords.x = simulation.penTopCoord.x;
+            simulation.penCoords.y = simulation.penTopCoord.y;
             restartSimulationParms();
         }
         else { //unlock
@@ -248,7 +275,8 @@ window.onload = function () {
             }
         }
     }
-        function mouse_move_handler(e) {
+    function mouse_move_handler(e) {
+            if (!simulation.active) return;
             if (!simulation.mouse.isDown) return;
             //get movement of the mouse in lock API
             let movementX = e.movementX ||
@@ -274,16 +302,18 @@ window.onload = function () {
                 examStage(newPenCoordX, newPenCoordY);
             }
         }
-        function lockChange() {
+    function lockChange() {
             if (document.pointerLockElement === canvas ||
                 document.mozPointerLockElement === canvas ||
                 document.webkitPointerLockElement === canvas) {
             } else {
                 //unlock
             }
-        }
+    }
 
-        function touch_start_handler(e) {
+    function touch_start_handler(e) {
+        if (!simulation.active) return;
+        document.getElementById('helpText').style.display = 'none';
             let eps = simulation.penTopCoord.accuracy,  //pixel gap to get the pen by its end
                 getPenX = simulation.penTopCoord.x,     //coords of pen`s end
                 getPenY = simulation.penTopCoord.y;
@@ -294,14 +324,13 @@ window.onload = function () {
 
             if (Math.abs(touch.pageX - getPenX) < eps && Math.abs(touch.pageY - getPenY) < eps) {
                 simulation.mouse.isDown = true;
-                //simulation.penCoords.x = cfg.width / 2.0 + simulation.penInitialParams.positionX;
-                //simulation.penCoords.y = 75;
                 restartSimulationParms();
                 //simulation.mouse.startX = touch.pageX;
                 //simulation.mouse.startY = touch.pageY;
             }
         }
-        function touch_move_handler(e) {
+    function touch_move_handler(e) {
+            if (!simulation.active) return;
             e.preventDefault();
             if (!simulation.mouse.isDown) return;
         
@@ -347,34 +376,43 @@ window.onload = function () {
             }
         }
 
-        let stageBtn = document.getElementById('stageBtn');
-        stageBtn.addEventListener('click', () => {
-            if (simulation.stages.training) {
-                simulation.stages.training = false;
-                simulation.stages.practice = true;
-                simulation.stages.exam = false;
-                stageBtn.value = "Start Exam";
-                simulation.mouse.isDown = false;
-            }
-            else if (simulation.stages.practice) {
-                simulation.stages.training = false;
-                simulation.stages.practice = false;
-                simulation.stages.exam = true;
-                stageBtn.style.display = 'none';
-                simulation.mouse.isDown = false;
-                let inputText = document.getElementById('examText');
-                inputText.style.display = 'block';
-                //inputText.value = "Start Exam";
-                simulation.exam.rightPath = true;
-            };
-        })
-
-        //set of functions
-        function mod(x) { //x set -1 or 1 if it is out of interval [-1; 1] 
-            return Math.abs(x) > 1 ? 1.0 * x / Math.abs(x) : x;
+    let stageBtn = document.getElementById('stageBtn');
+    stageBtn.addEventListener('click', () => {
+        //show popup
+        showPopup();
+        stageBtn.style.display = 'none';        
+        //levels
+        if (simulation.stages.training) {
+            simulation.stages.training = false;
+            simulation.stages.practice = true;
+            simulation.stages.exam = false;
+            stageBtn.value = "Proceed";
+            simulation.mouse.isDown = false;
+            document.getElementById('title').value = "Practice";
         }
-        //get the rotation angles by the moving coords and rotate the pen
-        function movePen(newPenCoordX, newPenCoordY, radius) {
+        else if (simulation.stages.practice) {
+            simulation.stages.training = false;
+            simulation.stages.practice = false;
+            simulation.stages.exam = true;
+            stageBtn.style.display = 'none';
+            simulation.mouse.isDown = false;
+            let inputText = document.getElementById('examText');
+            inputText.style.display = 'block';
+            simulation.exam.rightPath = true;
+            document.getElementById('title').value = "Exam";
+        };
+    })
+    let popupBtn = document.getElementById('popupBtn');
+    popupBtn.addEventListener('click', () => {
+        removePopup();
+    })
+
+    //set of functions
+    function mod(x) { //x set -1 or 1 if it is out of interval [-1; 1] 
+        return Math.abs(x) > 1 ? 1.0 * x / Math.abs(x) : x;
+    }
+    //get the rotation angles by the moving coords and rotate the pen
+    function movePen(newPenCoordX, newPenCoordY, radius) {
             simulation.penCoords.x = newPenCoordX; simulation.penCoords.y = newPenCoordY;
             //caclulate rotation angle around y and x axises
             let yAngle = simulation.maxPenAngle * mod((cfg.centerX - simulation.penCoords.x) / radius);
@@ -389,14 +427,14 @@ window.onload = function () {
                 penObj.rotation.y = -yAngle;
             if (!Number.isNaN(xAngle))
                 penObj.rotation.x = xAngle;
-        }
-        function trainingStage(newPenCoordX, newPenCoordY) {
+    }
+    function trainingStage(newPenCoordX, newPenCoordY) {
             //change index of the pattern data
             let eps = simulation.trainingCheckPoints.accuracy;
             if ((Math.abs(newPenCoordX - simulation.trainingCheckPoints.firstChange.x) < eps &&
-                Math.abs(newPenCoordY - simulation.trainingCheckPoints.firstChange.y) < 3.0 * eps) ||
+                Math.abs(newPenCoordY - simulation.trainingCheckPoints.firstChange.y) < 4.0 * eps) ||
                 (Math.abs(newPenCoordX - simulation.trainingCheckPoints.secondChange.x) < eps &&
-                    Math.abs(newPenCoordY - simulation.trainingCheckPoints.secondChange.y) < 3.0 * eps)) {
+                    Math.abs(newPenCoordY - simulation.trainingCheckPoints.secondChange.y) < 4.0 * eps)) {
             
                 let sign = Math.sign(simulation.trainingCheckPoints.firstChange.x - simulation.penCoords.x);
                 newPenCoordX += sign * 2.0 * eps;
@@ -438,18 +476,18 @@ window.onload = function () {
                     }
                 }
             }
-        }
-        function practiceStage(newPenCoordX, newPenCoordY) {
+    }
+    function practiceStage(newPenCoordX, newPenCoordY) {
             movePen(newPenCoordX, newPenCoordY, simulation.maxPixelPenRadius);
             //draw line 
-            let lineX = 280.0 * (simulation.penCoords.x - 0.5 * cfg.width) / (0.5 * cfg.width);
-            let lineY = -150.0 * (simulation.penCoords.y - 0.5 * cfg.height) / (0.5 * cfg.height);
+            let lineX = simulation.practice.lineXTransform * (simulation.penCoords.x - 0.5 * cfg.width) / (0.5 * cfg.width);
+            let lineY = simulation.practice.lineYTransform * (simulation.penCoords.y - 0.5 * cfg.height) / (0.5 * cfg.height);
             trajectoryPoints.push(new THREE.Vector3(lineX, lineY, 600));
             trajectoryPoints2.push(new THREE.Vector3(lineX, lineY + 0.5, 600));
             trajectoryPoints3.push(new THREE.Vector3(lineX, lineY - 0.5, 600));
             trajectoryPoints4.push(new THREE.Vector3(lineX - 0.5, lineY, 600));
             trajectoryPointsTime.push(new Date);
-        }
+    }
     function examStage(newPenCoordX, newPenCoordY) {
             let inputText = document.getElementById('examText');
             //current time
@@ -484,6 +522,11 @@ window.onload = function () {
                 simulation.exam.failTime = new Date;
                 inputText.value = "No stops allowed";
                 setLight(simulation.exam.failColor); //red light
+                setTimeout(() => {
+                    restartSimulationParms();
+                    setLight(0xffffff);
+                    simulation.exam.lastMovementTime = 0;
+                }, simulation.exam.redPenTime);
             } else {
                 simulation.exam.lastMovementTime = new Date();
                 setLight(0xffffff);
@@ -526,10 +569,12 @@ window.onload = function () {
                     simulation.exam.rightPath = false;
                     simulation.exam.failTime = new Date;
                     document.getElementById('examText').value = "Wrong Trajectory";
-                    //red light
-                    scene.remove(light);
-                    light = new THREE.AmbientLight(simulation.exam.failColor);
-                    scene.add(light);
+                    setLight(simulation.exam.failColor); //red light
+                    setTimeout(() => {
+                    restartSimulationParms();
+                    setLight(0xffffff);
+                    simulation.exam.lastMovementTime = 0;
+                }, simulation.exam.redPenTime);
                 }
             }//if 
             //pass
@@ -538,14 +583,14 @@ window.onload = function () {
                 simulation.exam.nonStop) {
                 document.getElementById('examText').value = "Exam passed!";
                 //green light
-                scene.remove(light);
-                light = new THREE.AmbientLight(simulation.exam.passColor);
-                scene.add(light);
-                simulation.exam.passed = true;
-                //mouse_down_handler();
+                setLight(simulation.exam.passColor);
+                setTimeout(() => {
+                    mouse_down_handler();
+                showPopup();
+                }, simulation.exam.waitReloadTime);
             }
-        }//exam function
-        function getDataFromImages() {
+    }//exam function
+    function getDataFromImages() {
             //to get patternData[0] for training mode
             let patternCanvas = document.getElementById('supportingCanvas');
             patternCanvas.setAttribute('width', cfg.width);
@@ -610,17 +655,17 @@ window.onload = function () {
                     i += 4;
                 } while (i < patternDataExtended.length);
             };
-        }
-        //set pen to initial state func
-        function startPenObject() {
+    }
+    //set pen to initial state func
+    function startPenObject() {
             penObj.rotation.x = simulation.penInitialParams.angleX;
             penObj.rotation.y = simulation.penInitialParams.angleY;
             penObj.rotation.z = simulation.penInitialParams.angleZ;
             penObj.position.x = simulation.penInitialParams.positionX;
             penObj.position.y = simulation.penInitialParams.positionY;
             penObj.position.z = simulation.penInitialParams.positionZ;
-        };
-        function restartSimulationParms() {
+    };
+    function restartSimulationParms() {
             simulation.dataIndex = 2;
 
             simulation.exam.passed = false;
@@ -655,5 +700,43 @@ window.onload = function () {
             }
         }
         return false;
+    }
+    function showPopup() {
+        document.getElementById('helpText').style.display = 'none';   
+        document.getElementById('popupTitle').style.display = 'block';        
+        document.getElementById('popupText').style.display = 'block';        
+        document.getElementById('popupBtn').style.display = 'block';
+        if (simulation.stages.training) {
+            document.getElementById('popupTitle').value = "Practice instructions";
+            document.getElementById('popupText').value =
+            `Practice - click anywhere on the screen to 'grab' the tool and start moving. It is a free flow, so you can move how you want and you will see its path in purple. The purpose of this stage is to learn to stay close or on the path. Release the tool with the mouse click. Then click the button on the bottom right to advance to the next stage.`;
+        };
+        if (simulation.stages.practice) {
+            document.getElementById('popupTitle').value = "Exam instructions";
+            document.getElementById('popupText').value =
+                `Exam -  this is the final test. Grab the tool with the mouse click and try to carefully follow the path without any stops. Do this 3 times and you passed. The hard mode is on - any failure and you start over.`;
+        };
+        if (simulation.stages.exam) {
+            document.getElementById('popupTitle').value = "Congratulations";
+            document.getElementById('popupText').value =
+                `Click OK to record your completion and proceed with the micro-sim.`;
+        };
+        scene.add(popupPlaneMesh);
+        simulation.active = false;
+        scene.remove(penObj);
+    }
+    function removePopup() {
+        document.getElementById('popupTitle').style.display = 'none';
+        document.getElementById('popupText').style.display = 'none';
+        popupBtn.style.display = 'none';
+        scene.remove(popupPlaneMesh);
+        scene.add(penObj);
+        simulation.active = true;
+        if (simulation.stages.practice || simulation.stages.training) {
+            setTimeout(() => {
+                document.getElementById('stageBtn').style.display = 'block';
+            }, simulation.waitBtnVisibility);
+        }
+        document.getElementById('helpText').style.display = 'block';
     }
 }//onload
