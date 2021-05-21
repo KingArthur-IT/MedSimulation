@@ -435,9 +435,6 @@ window.onload = function () {
                 penObj.rotation.x = xAngle;
     }
     function trainingStage(newPenCoordX, newPenCoordY) {
-        alert(patternData[simulation.dataIndex][0].length)
-        alert(patternData[simulation.dataIndex][1].length)
-        alert(patternData[simulation.dataIndex][2].length)
             //change index of the pattern data
             let eps = simulation.trainingCheckPoints.accuracy;
             if ((Math.abs(newPenCoordX - simulation.trainingCheckPoints.firstChange.x) < eps &&
@@ -607,7 +604,8 @@ window.onload = function () {
         patternCanvas.setAttribute('width', cfg.width);
         patternCanvas.setAttribute('height', cfg.height);
         let patternCanvasContex = patternCanvas.getContext('2d');
-        let imageOfPath1 = new Image(); imageOfPath1.src = cfg.trainingPath1Src;
+        let imageOfPath1 = new Image();
+        imageOfPath1.src = cfg.trainingPath1Src;
         imageOfPath1.onload = function () {
                 patternCanvasContex.drawImage(imageOfPath1, 0, 0)
                 //extended data array have color of each pixel in RGBA
