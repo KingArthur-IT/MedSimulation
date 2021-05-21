@@ -320,7 +320,6 @@ window.onload = function () {
     function touch_start_handler(e) {
         if (!simulation.active) return;
         document.getElementById('helpText').style.display = 'none';
-        document.getElementById('helpText').style.display = 'none';
         let eps = simulation.penTopCoord.accuracy,  //pixel gap to get the pen by its end
             getPenX = simulation.penTopCoord.x,     //coords of pen`s end
             getPenY = simulation.penTopCoord.y - simulation.penInitialParams.positionY;
@@ -329,6 +328,7 @@ window.onload = function () {
         let evt = (typeof e.originalEvent === 'undefined') ? e : e.originalEvent;
         let touch = evt.touches[0] || evt.changedTouches[0];
 
+        alert(touch.pageY, touch.pageX)
         if (Math.abs(touch.pageX - getPenX) < eps && Math.abs(touch.pageY - getPenY) < eps) {
             simulation.mouse.isDown = true;
             restartSimulationParms();
@@ -606,9 +606,7 @@ window.onload = function () {
         patternCanvas.setAttribute('height', cfg.height);
         let patternCanvasContex = patternCanvas.getContext('2d');
         let imageOfPath1 = new Image(); imageOfPath1.src = cfg.trainingPath1Src;
-        alert('image')
         imageOfPath1.onload = function () {
-                alert('imageload')
                 patternCanvasContex.drawImage(imageOfPath1, 0, 0)
                 //extended data array have color of each pixel in RGBA
                 let patternDataExtended = patternCanvasContex.getImageData(0, 0, cfg.width, cfg.height).data;
