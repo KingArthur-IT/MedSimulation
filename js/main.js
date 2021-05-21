@@ -600,13 +600,15 @@ window.onload = function () {
             }
     }//exam function
     function getDataFromImages() {
-            //to get patternData[0] for training mode
-            let patternCanvas = document.getElementById('supportingCanvas');
-            patternCanvas.setAttribute('width', cfg.width);
-            patternCanvas.setAttribute('height', cfg.height);
-            let patternCanvasContex = patternCanvas.getContext('2d');
-            let imageOfPath1 = new Image(); imageOfPath1.src = cfg.trainingPath1Src;
-            imageOfPath1.onload = function () {
+        //to get patternData[0] for training mode
+        let patternCanvas = document.getElementById('supportingCanvas');
+        patternCanvas.setAttribute('width', cfg.width);
+        patternCanvas.setAttribute('height', cfg.height);
+        let patternCanvasContex = patternCanvas.getContext('2d');
+        let imageOfPath1 = new Image(); imageOfPath1.src = cfg.trainingPath1Src;
+        alert('image')
+        imageOfPath1.onload = function () {
+                alert('imageload')
                 patternCanvasContex.drawImage(imageOfPath1, 0, 0)
                 //extended data array have color of each pixel in RGBA
                 let patternDataExtended = patternCanvasContex.getImageData(0, 0, cfg.width, cfg.height).data;
