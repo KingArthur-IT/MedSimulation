@@ -328,7 +328,6 @@ window.onload = function () {
         let evt = (typeof e.originalEvent === 'undefined') ? e : e.originalEvent;
         let touch = evt.touches[0] || evt.changedTouches[0];
 
-        alert(touch.pageY, touch.pageX)
         if (Math.abs(touch.pageX - getPenX) < eps && Math.abs(touch.pageY - getPenY) < eps) {
             simulation.mouse.isDown = true;
             restartSimulationParms();
