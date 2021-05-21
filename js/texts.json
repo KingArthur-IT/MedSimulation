@@ -1,0 +1,6 @@
+data = `{
+    "trainingInstructions" : "You start with Training - single click anywhere on the screen to 'grab' the tool and try moving it following the path. You can't go wrong on this stage - the tool is forced to follow the path. Release the tool with the mouse click. Then click the button on the bottom right to advance to the next stage.", 
+    "practiceInstructions" : "Practice - click anywhere on the screen to 'grab' the tool and start moving. It is a free flow, so you can move how you want and you will see its path in purple. The purpose of this stage is to learn to stay close or on the path. Release the tool with the mouse click. Then click the button on the bottom right to advance to the next stage.", 
+    "examInstructions" : "Exam -  this is the final test. Grab the tool with the mouse click and try to carefully follow the path without any stops. Do this 3 times and you passed. The hard mode is on - any failure and you start over.",
+    "congratulations" : "Click OK to record your completion and proceed with the micro-sim."
+}`

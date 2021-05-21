@@ -88,6 +88,7 @@ window.onload = function () {
         }
     };
 
+    let texts = JSON.parse(data); //Get JSON
     //data 850x450 of 0 and 1. where 0 - no path in coord, 1 - has path 
     // [0] and [1] for training mode, [2] - full path for exam mode
     let patternData = []; 
@@ -95,7 +96,8 @@ window.onload = function () {
     patternData[0] = []; patternData[1] = []; patternData[2] = [];
     //images to load in suppored canvases to parse data from them
     let imageOfPath1 = new Image(); let imageOfPath2 = new Image(); let imageOfPath3 = new Image();
-    imageOfPath1.src = cfg.trainingPath1Src; imageOfPath2.src = cfg.trainingPath2Src;
+    imageOfPath1.src = cfg.trainingPath1Src;
+    imageOfPath2.src = cfg.trainingPath2Src;
     imageOfPath3.src = cfg.trainingPath3Src;
     getDataFromImages();
 
@@ -719,18 +721,18 @@ window.onload = function () {
         document.getElementById('popupBtn').style.display = 'block';
         if (simulation.stages.isTraining) {
             document.getElementById('popupTitle').value = "Practice instructions";
-            document.getElementById('popupText').value =
-            `Practice - click anywhere on the screen to 'grab' the tool and start moving. It is a free flow, so you can move how you want and you will see its path in purple. The purpose of this stage is to learn to stay close or on the path. Release the tool with the mouse click. Then click the button on the bottom right to advance to the next stage.`;
+            document.getElementById('popupText').value = texts.practiceInstructions;
+            //`Practice - click anywhere on the screen to 'grab' the tool and start moving. It is a free flow, so you can move how you want and you will see its path in purple. The purpose of this stage is to learn to stay close or on the path. Release the tool with the mouse click. Then click the button on the bottom right to advance to the next stage.`;
         };
         if (simulation.stages.isPractice) {
             document.getElementById('popupTitle').value = "Exam instructions";
-            document.getElementById('popupText').value =
-                `Exam -  this is the final test. Grab the tool with the mouse click and try to carefully follow the path without any stops. Do this 3 times and you passed. The hard mode is on - any failure and you start over.`;
+            document.getElementById('popupText').value = texts.examInstructions;
+                //`Exam -  this is the final test. Grab the tool with the mouse click and try to carefully follow the path without any stops. Do this 3 times and you passed. The hard mode is on - any failure and you start over.`;
         };
         if (simulation.stages.isExam) {
             document.getElementById('popupTitle').value = "Congratulations";
-            document.getElementById('popupText').value =
-                `Click OK to record your completion and proceed with the micro-sim.`;
+            document.getElementById('popupText').value = texts.congratulations;
+                //`Click OK to record your completion and proceed with the micro-sim.`;
         };
         scene.add(popupPlaneMesh);
         simulation.active = false;
