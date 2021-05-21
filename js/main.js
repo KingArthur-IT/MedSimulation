@@ -93,6 +93,10 @@ window.onload = function () {
     let patternData = []; 
     patternData.push(); patternData.push(); patternData.push();
     patternData[0] = []; patternData[1] = []; patternData[2] = [];
+    //images to load in suppored canvases to parse data from them
+    let imageOfPath1 = new Image(); let imageOfPath2 = new Image(); let imageOfPath3 = new Image();
+    imageOfPath1.src = cfg.trainingPath1Src; imageOfPath2.src = cfg.trainingPath2Src;
+    imageOfPath3.src = cfg.trainingPath3Src;
     getDataFromImages();
 
     //main canvas to draw the scene
@@ -604,66 +608,61 @@ window.onload = function () {
         patternCanvas.setAttribute('width', cfg.width);
         patternCanvas.setAttribute('height', cfg.height);
         let patternCanvasContex = patternCanvas.getContext('2d');
-        let imageOfPath1 = new Image();
-        imageOfPath1.src = cfg.trainingPath1Src;
         imageOfPath1.onload = function () {
-                patternCanvasContex.drawImage(imageOfPath1, 0, 0)
-                //extended data array have color of each pixel in RGBA
-                let patternDataExtended = patternCanvasContex.getImageData(0, 0, cfg.width, cfg.height).data;
-                let i = 0;
-                do {
-                    if (patternDataExtended[i] == 0 &&
-                        patternDataExtended[i + 1] == 0 &&
-                        patternDataExtended[i + 2] == 0 &&
-                        patternDataExtended[i + 3] == 0)
-                        patternData[0].push(0);
-                    else patternData[0].push(1);
-                    i += 4;
-                } while (i < patternDataExtended.length);
-            };
-
-            //to get patternData[1] for training mode
-            let supportingCanvas2 = document.getElementById('supportingCanvas2');
-            supportingCanvas2.setAttribute('width', cfg.width);
-            supportingCanvas2.setAttribute('height', cfg.height);
-            let patternCanvasContex2 = supportingCanvas2.getContext('2d');
-            let imageOfPath2 = new Image(); imageOfPath2.src = cfg.trainingPath2Src;
-            imageOfPath2.onload = function () {
-                patternCanvasContex2.drawImage(imageOfPath2, 0, 0)
-                //extended data array have color of each pixel in RGBA
-                let patternDataExtended = patternCanvasContex2.getImageData(0, 0, cfg.width, cfg.height).data;
-                let i = 0;
-                do {
-                    if (patternDataExtended[i] == 0 &&
-                        patternDataExtended[i + 1] == 0 &&
-                        patternDataExtended[i + 2] == 0 &&
-                        patternDataExtended[i + 3] == 0)
-                        patternData[1].push(0);
-                    else patternData[1].push(1);
-                    i += 4;
-                } while (i < patternDataExtended.length);
-            };
-            //to get patternData[2] for exam mode
-            let supportingCanvas3 = document.getElementById('supportingCanvas3');
-            supportingCanvas3.setAttribute('width', cfg.width);
-            supportingCanvas3.setAttribute('height', cfg.height);
-            let patternCanvas3Contex = supportingCanvas3.getContext('2d');
-            let imageOfPath3 = new Image(); imageOfPath3.src = cfg.trainingPath3Src;
-            imageOfPath3.onload = function () {
-                patternCanvas3Contex.drawImage(imageOfPath3, 0, 0)
-                //extended data array have color of each pixel in RGBA
-                let patternDataExtended = patternCanvas3Contex.getImageData(0, 0, cfg.width, cfg.height).data;
-                let i = 0;
-                do {
-                    if (patternDataExtended[i] == 0 &&
-                        patternDataExtended[i + 1] == 0 &&
-                        patternDataExtended[i + 2] == 0 &&
-                        patternDataExtended[i + 3] == 0)
-                        patternData[2].push(0);
-                    else patternData[2].push(1);
-                    i += 4;
-                } while (i < patternDataExtended.length);
-            };
+            patternCanvasContex.drawImage(imageOfPath1, 0, 0)
+            //extended data array have color of each pixel in RGBA
+            let patternDataExtended = patternCanvasContex.getImageData(0, 0, cfg.width, cfg.height).data;
+            let i = 0;
+            do {
+                if (patternDataExtended[i] == 0 &&
+                    patternDataExtended[i + 1] == 0 &&
+                    patternDataExtended[i + 2] == 0 &&
+                    patternDataExtended[i + 3] == 0)
+                    patternData[0].push(0);
+                else patternData[0].push(1);
+                i += 4;
+            } while (i < patternDataExtended.length);
+        };
+        //to get patternData[1] for training mode
+        let supportingCanvas2 = document.getElementById('supportingCanvas2');
+        supportingCanvas2.setAttribute('width', cfg.width);
+        supportingCanvas2.setAttribute('height', cfg.height);
+        let patternCanvasContex2 = supportingCanvas2.getContext('2d');
+        imageOfPath2.onload = function () {
+            patternCanvasContex2.drawImage(imageOfPath2, 0, 0)
+            //extended data array have color of each pixel in RGBA
+            let patternDataExtended = patternCanvasContex2.getImageData(0, 0, cfg.width, cfg.height).data;
+            let i = 0;
+            do {
+                if (patternDataExtended[i] == 0 &&
+                    patternDataExtended[i + 1] == 0 &&
+                    patternDataExtended[i + 2] == 0 &&
+                    patternDataExtended[i + 3] == 0)
+                    patternData[1].push(0);
+                else patternData[1].push(1);
+                i += 4;
+            } while (i < patternDataExtended.length);
+        };
+        //to get patternData[2] for exam mode
+        let supportingCanvas3 = document.getElementById('supportingCanvas3');
+        supportingCanvas3.setAttribute('width', cfg.width);
+        supportingCanvas3.setAttribute('height', cfg.height);
+        let patternCanvas3Contex = supportingCanvas3.getContext('2d');
+        imageOfPath3.onload = function () {
+            patternCanvas3Contex.drawImage(imageOfPath3, 0, 0)
+            //extended data array have color of each pixel in RGBA
+            let patternDataExtended = patternCanvas3Contex.getImageData(0, 0, cfg.width, cfg.height).data;
+            let i = 0;
+            do {
+                if (patternDataExtended[i] == 0 &&
+                    patternDataExtended[i + 1] == 0 &&
+                    patternDataExtended[i + 2] == 0 &&
+                    patternDataExtended[i + 3] == 0)
+                    patternData[2].push(0);
+                else patternData[2].push(1);
+                i += 4;
+            } while (i < patternDataExtended.length);
+        };
     }
     //set pen to initial state func
     function startPenObject() {
