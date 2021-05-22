@@ -93,13 +93,15 @@ window.onload = function () {
     // [0] and [1] for training mode, [2] - full path for exam mode
     let patternData = []; 
     patternData.push(); patternData.push(); patternData.push();
-    patternData[0] = []; patternData[1] = []; patternData[2] = [];
+    patternData[0] = JSON.parse(pattern1);
+    patternData[1] = JSON.parse(pattern2);
+    patternData[2] = JSON.parse(patternFull);
     //images to load in suppored canvases to parse data from them
     let imageOfPath1 = new Image(); let imageOfPath2 = new Image(); let imageOfPath3 = new Image();
     imageOfPath1.src = cfg.trainingPath1Src;
     imageOfPath2.src = cfg.trainingPath2Src;
     imageOfPath3.src = cfg.trainingPath3Src;
-    getDataFromImages();
+    //getDataFromImages();
 
     //main canvas to draw the scene
     let canvas = document.getElementById('canvas');
@@ -246,8 +248,20 @@ window.onload = function () {
         } else if ("onwebkitpointerlockchange" in document) {
             document.addEventListener('webkitpointerlockchange', lockChange, false);
     };
+
+    /* function to create data
+    function download(content, fileName, contentType) {
+        var a = document.createElement("a");
+        var file = new Blob([content], {type: contentType});
+        a.href = URL.createObjectURL(file);
+        a.download = fileName;
+        a.click();
+    }*/
     
     function mouse_down_handler() {
+        //var jsonData = JSON.stringify(patternData[2]);
+        //download(jsonData, 'patternFullData.txt', 'text/plain');
+
         if (!simulation.active) return;
         document.getElementById('helpText').style.display = 'none';
         if (!simulation.mouse.isDown) {//lock and start
@@ -287,7 +301,7 @@ window.onload = function () {
             }
         }
     }
-    function mouse_move_handler(e) {
+    function mouse_move_handler(e) {        
             if (!simulation.active) return;
             if (!simulation.mouse.isDown) return;
             //get movement of the mouse in lock API
