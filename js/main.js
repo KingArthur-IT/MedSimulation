@@ -457,6 +457,7 @@ window.onload = function () {
                 simulation.dataIndex = directionSign > 0 ? 1 : 0;
             }
         let k = parseInt(newPenCoordX + cfg.width * newPenCoordY); //index in data
+        document.title = k + '/' + patternData[simulation.dataIndex][k] + '/' + typeof (patternData[simulation.dataIndex][k]) + '/' + patternData[simulation.dataIndex][k] == 1;
             if (patternData[simulation.dataIndex][k] == 1)
                 movePen(newPenCoordX, newPenCoordY, simulation.maxPixelPenRadius);
             else {
@@ -542,6 +543,7 @@ window.onload = function () {
             
         //if exam in process
         let k = parseInt(newPenCoordX + cfg.width * newPenCoordY); //index in data
+
         if ((patternData[0][k] + patternData[1][k]) == 0) {
                 simulation.exam.inline = false;
                 simulation.exam.failTime = new Date;
