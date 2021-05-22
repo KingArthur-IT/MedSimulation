@@ -89,7 +89,6 @@ window.onload = function () {
     };
 
     let texts = JSON.parse(data); //Get JSON
-    //data 850x450 of 0 and 1. where 0 - no path in coord, 1 - has path 
     // [0] and [1] for training mode, [2] - full path for exam mode
     let patternData = []; 
     patternData.push(); patternData.push(); patternData.push();
@@ -457,7 +456,6 @@ window.onload = function () {
                 simulation.dataIndex = directionSign > 0 ? 1 : 0;
             }
         let k = parseInt(newPenCoordX + cfg.width * newPenCoordY); //index in data
-        document.title = patternData[simulation.dataIndex][k] + '/' + (patternData[simulation.dataIndex][k] == 1);
             if (patternData[simulation.dataIndex][k] == 1)
                 movePen(newPenCoordX, newPenCoordY, simulation.maxPixelPenRadius);
             else {
@@ -544,7 +542,7 @@ window.onload = function () {
         //if exam in process
         let k = parseInt(newPenCoordX + cfg.width * newPenCoordY); //index in data
 
-        if ((patternData[0][k] + patternData[1][k]) == 0) {
+        if (patternData[2][k] == 0) {
                 simulation.exam.inline = false;
                 simulation.exam.failTime = new Date;
                 inputText.innerHTML = "Wrong Trajectory";
