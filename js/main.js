@@ -561,14 +561,12 @@ window.onload = function () {
             
             //if exam in process
         let k = (newPenCoordX + cfg.width * newPenCoordY); //index in data
-            if ((patternData[0][k] + patternData[1][k]) == 0) {
+        if ((patternData[0][k] + patternData[1][k]) == 0) {
+                document.title = "wrong"
                 simulation.exam.inline = false;
                 simulation.exam.failTime = new Date;
                 inputText.innerHTML = "Wrong Trajectory";
-                //red light
-                scene.remove(light);
-                light = new THREE.AmbientLight(simulation.exam.failColor);
-                scene.add(light);
+                setLight(simulation.exam.failColor) //red light
             }
             //path
             let allPoint = true;
