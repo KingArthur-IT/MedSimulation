@@ -562,7 +562,7 @@ window.onload = function () {
             
             //if exam in process
         let k = (newPenCoordX + cfg.width * newPenCoordY); //index in data
-        document.title = patternData[0][k] + '/' + patternData[1][k] + "/" + patternData[1].length;
+        document.title = k + '/' + newPenCoordX + "/" + newPenCoordY;
         if ((patternData[0][k] + patternData[1][k]) == 0) {
                 simulation.exam.inline = false;
                 simulation.exam.failTime = new Date;
