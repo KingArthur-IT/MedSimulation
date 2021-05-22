@@ -348,8 +348,8 @@ window.onload = function () {
             let evt = (typeof e.originalEvent === 'undefined') ? e : e.originalEvent;
             let touch = evt.touches[0] || evt.changedTouches[0];
 
-            let newPosX = touch.pageX;
-            let newPosY = touch.pageY + simulation.penInitialParams.positionY;
+            let newPosX = parseInt(touch.pageX);
+            let newPosY = parseInt(touch.pageY + simulation.penInitialParams.positionY);
         
             //training mode
             if (simulation.stages.isTraining) {
@@ -457,7 +457,7 @@ window.onload = function () {
                 simulation.dataIndex = directionSign > 0 ? 1 : 0;
             }
         let k = parseInt(newPenCoordX + cfg.width * newPenCoordY); //index in data
-        document.title = k + '/' + patternData[simulation.dataIndex][k] + '/' + typeof (patternData[simulation.dataIndex][k]) + '/' + (patternData[simulation.dataIndex][k] == 1);
+        document.title = patternData[simulation.dataIndex][k] + '/' + (patternData[simulation.dataIndex][k] == 1);
             if (patternData[simulation.dataIndex][k] == 1)
                 movePen(newPenCoordX, newPenCoordY, simulation.maxPixelPenRadius);
             else {
