@@ -541,8 +541,7 @@ window.onload = function () {
                 return;
             };
       
-            //non stop
-        
+        //non stop        
         if (simulation.exam.lastMovementTime > 0 &&
             time - simulation.exam.lastMovementTime > simulation.examMaxStopTime) {
                 simulation.exam.nonStop = false;
@@ -559,7 +558,7 @@ window.onload = function () {
                 setLight(0xffffff);
             }
             
-            //if exam in process
+        //if exam in process
         let k = parseInt(newPenCoordX + cfg.width * newPenCoordY); //index in data
         if ((patternData[0][k] + patternData[1][k]) == 0) {
                 simulation.exam.inline = false;
