@@ -560,8 +560,8 @@ window.onload = function () {
             }
             
             //if exam in process
-            let k = (newPenCoordX + cfg.width * newPenCoordY); //index in data
-            if (patternData[2][k] == 0) {
+        let k = (newPenCoordX + cfg.width * newPenCoordY); //index in data
+            if ((patternData[0][k] + patternData[1][k]) == 0) {
                 simulation.exam.inline = false;
                 simulation.exam.failTime = new Date;
                 inputText.innerHTML = "Wrong Trajectory";
