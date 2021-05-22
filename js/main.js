@@ -342,7 +342,7 @@ window.onload = function () {
         document.getElementById('helpText').style.display = 'none';
         let eps = simulation.penTopCoord.accuracy,  //pixel gap to get the pen by its end
             getPenX = simulation.penTopCoord.x,     //coords of pen`s end
-            getPenY = simulation.penTopCoord.y - simulation.penInitialParams.positionY;
+            getPenY = simulation.penTopCoord.y;// - simulation.penInitialParams.positionY;
         simulation.penCoords.x = getPenX;
         simulation.penCoords.y = getPenY;
         let evt = (typeof e.originalEvent === 'undefined') ? e : e.originalEvent;
@@ -474,28 +474,28 @@ window.onload = function () {
                 let directionSign = (newPenCoordX - simulation.trainingCheckPoints.startPoint.x) * (newPenCoordY - simulation.trainingCheckPoints.startPoint.y);
                 simulation.dataIndex = directionSign > 0 ? 1 : 0;
             }
-        let k = (newPenCoordX + cfg.width * newPenCoordY); //index in data
-        console.log(patternData[simulation.dataIndex][k]);
+        let parseInt = parseInt(newPenCoordX + cfg.width * newPenCoordY); //index in data
+        document.title = patternData[simulation.dataIndex][k];
             if (patternData[simulation.dataIndex][k] == 1)
                 movePen(newPenCoordX, newPenCoordY, simulation.maxPixelPenRadius);
             else {
-                k = (newPenCoordX + cfg.width * (newPenCoordY + 3));
+                k = parseInt(newPenCoordX + cfg.width * (newPenCoordY + 3));
                 if (patternData[simulation.dataIndex][k] == 1)
                     movePen(newPenCoordX, newPenCoordY + 3, simulation.maxPixelPenRadius);
                 else {
-                    k = (newPenCoordX + cfg.width * (newPenCoordY - 3));
+                    k = parseInt(newPenCoordX + cfg.width * (newPenCoordY - 3));
                     if (patternData[simulation.dataIndex][k] == 1)
                         movePen(newPenCoordX, newPenCoordY - 3, simulation.maxPixelPenRadius);
                     else {
-                        k = (newPenCoordX + cfg.width * (newPenCoordY + 8));
+                        k = parseInt(newPenCoordX + cfg.width * (newPenCoordY + 8));
                         if (patternData[simulation.dataIndex][k] == 1)
                             movePen(newPenCoordX, newPenCoordY + 7, simulation.maxPixelPenRadius);
                         else {
-                            k = (newPenCoordX + cfg.width * (newPenCoordY - 8));
+                            k = parseInt(newPenCoordX + cfg.width * (newPenCoordY - 8));
                             if (patternData[simulation.dataIndex][k] == 1)
                                 movePen(newPenCoordX, newPenCoordY - 7, simulation.maxPixelPenRadius);
                             else {
-                                k = ((newPenCoordX + 10) + cfg.width * newPenCoordY);
+                                k = parseInt((newPenCoordX + 10) + cfg.width * newPenCoordY);
                                 if (patternData[simulation.dataIndex][k] == 1)
                                     movePen((newPenCoordX + 10), newPenCoordY, simulation.maxPixelPenRadius);
                             }
@@ -561,8 +561,8 @@ window.onload = function () {
             }
             
             //if exam in process
-        let k = (newPenCoordX + cfg.width * newPenCoordY); //index in data
-        document.title = k + '/' + newPenCoordX + "/" + newPenCoordY;
+        let k = parseInt(newPenCoordX + cfg.width * newPenCoordY); //index in data
+        document.title = k + '/' + newPenCoordX + "/" + newPenCoordY + '/' + patternData[0][k];
         if ((patternData[0][k] + patternData[1][k]) == 0) {
                 simulation.exam.inline = false;
                 simulation.exam.failTime = new Date;
