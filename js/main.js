@@ -96,12 +96,6 @@ window.onload = function () {
     patternData[0] = JSON.parse(pattern1);
     patternData[1] = JSON.parse(pattern2);
     patternData[2] = JSON.parse(patternFull);
-    //images to load in suppored canvases to parse data from them
-    let imageOfPath1 = new Image(); let imageOfPath2 = new Image(); let imageOfPath3 = new Image();
-    imageOfPath1.src = cfg.trainingPath1Src;
-    imageOfPath2.src = cfg.trainingPath2Src;
-    imageOfPath3.src = cfg.trainingPath3Src;
-    //getDataFromImages();
 
     //main canvas to draw the scene
     let canvas = document.getElementById('canvas');
@@ -248,20 +242,8 @@ window.onload = function () {
         } else if ("onwebkitpointerlockchange" in document) {
             document.addEventListener('webkitpointerlockchange', lockChange, false);
     };
-
-    /* function to create data
-    function download(content, fileName, contentType) {
-        var a = document.createElement("a");
-        var file = new Blob([content], {type: contentType});
-        a.href = URL.createObjectURL(file);
-        a.download = fileName;
-        a.click();
-    }*/
     
     function mouse_down_handler() {
-        //var jsonData = JSON.stringify(patternData[2]);
-        //download(jsonData, 'patternFullData.txt', 'text/plain');
-
         if (!simulation.active) return;
         document.getElementById('helpText').style.display = 'none';
         if (!simulation.mouse.isDown) {//lock and start
@@ -614,68 +596,6 @@ window.onload = function () {
                 }, simulation.exam.waitReloadTime);
             }
     }//exam function
-    function getDataFromImages() {
-        //to get patternData[0] for training mode
-        let patternCanvas = document.getElementById('supportingCanvas');
-        patternCanvas.setAttribute('width', cfg.width);
-        patternCanvas.setAttribute('height', cfg.height);
-        let patternCanvasContex = patternCanvas.getContext('2d');
-        imageOfPath1.onload = function () {
-            patternCanvasContex.drawImage(imageOfPath1, 0, 0)
-            //extended data array have color of each pixel in RGBA
-            let patternDataExtended = patternCanvasContex.getImageData(0, 0, cfg.width, cfg.height).data;
-            let i = 0;
-            do {
-                if (patternDataExtended[i] == 0 &&
-                    patternDataExtended[i + 1] == 0 &&
-                    patternDataExtended[i + 2] == 0 &&
-                    patternDataExtended[i + 3] == 0)
-                    patternData[0].push(0);
-                else patternData[0].push(1);
-                i += 4;
-            } while (i < patternDataExtended.length);
-        };
-        //to get patternData[1] for training mode
-        let supportingCanvas2 = document.getElementById('supportingCanvas2');
-        supportingCanvas2.setAttribute('width', cfg.width);
-        supportingCanvas2.setAttribute('height', cfg.height);
-        let patternCanvasContex2 = supportingCanvas2.getContext('2d');
-        imageOfPath2.onload = function () {
-            patternCanvasContex2.drawImage(imageOfPath2, 0, 0)
-            //extended data array have color of each pixel in RGBA
-            let patternDataExtended = patternCanvasContex2.getImageData(0, 0, cfg.width, cfg.height).data;
-            let i = 0;
-            do {
-                if (patternDataExtended[i] == 0 &&
-                    patternDataExtended[i + 1] == 0 &&
-                    patternDataExtended[i + 2] == 0 &&
-                    patternDataExtended[i + 3] == 0)
-                    patternData[1].push(0);
-                else patternData[1].push(1);
-                i += 4;
-            } while (i < patternDataExtended.length);
-        };
-        //to get patternData[2] for exam mode
-        let supportingCanvas3 = document.getElementById('supportingCanvas3');
-        supportingCanvas3.setAttribute('width', cfg.width);
-        supportingCanvas3.setAttribute('height', cfg.height);
-        let patternCanvas3Contex = supportingCanvas3.getContext('2d');
-        imageOfPath3.onload = function () {
-            patternCanvas3Contex.drawImage(imageOfPath3, 0, 0)
-            //extended data array have color of each pixel in RGBA
-            let patternDataExtended = patternCanvas3Contex.getImageData(0, 0, cfg.width, cfg.height).data;
-            let i = 0;
-            do {
-                if (patternDataExtended[i] == 0 &&
-                    patternDataExtended[i + 1] == 0 &&
-                    patternDataExtended[i + 2] == 0 &&
-                    patternDataExtended[i + 3] == 0)
-                    patternData[2].push(0);
-                else patternData[2].push(1);
-                i += 4;
-            } while (i < patternDataExtended.length);
-        };
-    }
     //set pen to initial state func
     function startPenObject() {
             penObj.rotation.x = simulation.penInitialParams.angleX;
@@ -732,17 +652,14 @@ window.onload = function () {
         if (simulation.stages.isTraining) {
             document.getElementById('popupTitle').value = "Practice instructions";
             document.getElementById('popupText').value = texts.practiceInstructions;
-            //`Practice - click anywhere on the screen to 'grab' the tool and start moving. It is a free flow, so you can move how you want and you will see its path in purple. The purpose of this stage is to learn to stay close or on the path. Release the tool with the mouse click. Then click the button on the bottom right to advance to the next stage.`;
         };
         if (simulation.stages.isPractice) {
             document.getElementById('popupTitle').value = "Exam instructions";
             document.getElementById('popupText').value = texts.examInstructions;
-                //`Exam -  this is the final test. Grab the tool with the mouse click and try to carefully follow the path without any stops. Do this 3 times and you passed. The hard mode is on - any failure and you start over.`;
         };
         if (simulation.stages.isExam) {
             document.getElementById('popupTitle').value = "Congratulations";
             document.getElementById('popupText').value = texts.congratulations;
-                //`Click OK to record your completion and proceed with the micro-sim.`;
         };
         scene.add(popupPlaneMesh);
         simulation.active = false;
