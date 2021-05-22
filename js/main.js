@@ -561,8 +561,8 @@ window.onload = function () {
             
             //if exam in process
         let k = (newPenCoordX + cfg.width * newPenCoordY); //index in data
+        document.title = patternData[0][k] + '/' + patternData[1][k] + "/";
         if ((patternData[0][k] + patternData[1][k]) == 0) {
-                document.title = "wrong"
                 simulation.exam.inline = false;
                 simulation.exam.failTime = new Date;
                 inputText.innerHTML = "Wrong Trajectory";
