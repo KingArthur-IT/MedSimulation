@@ -102,8 +102,8 @@ window.onload = function () {
     canvas.setAttribute('height', cfg.height);
 
     //renderer
-    let renderer = new THREE.WebGLRenderer({ canvas: canvas });
-    renderer.setClearColor(0x000000);
+    let renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true });
+    renderer.setClearColor(0xffffff);
     //scene and camera
     let scene = new THREE.Scene();
     let camera = new THREE.PerspectiveCamera(40.0, cfg.width / cfg.height, 0.1, 5000); 
@@ -126,7 +126,7 @@ window.onload = function () {
         transparent: true
     });    
     let patternPlaneMesh = new THREE.Mesh(patternPlane, material); 
-    patternPlaneMesh.scale.set(1.55, 1.6, 1.6);
+    patternPlaneMesh.scale.set(1.6, 1.6, 1.6);
     patternPlaneMesh.position.y += simulation.cameraOffsetY;
     scene.add(patternPlaneMesh);
 
@@ -147,8 +147,18 @@ window.onload = function () {
     let mtlLoader = new THREE.MTLLoader();
     mtlLoader.setPath(cfg.modelsPath);
     //load pen
-    mtlLoader.load('bovie.mtl', function(materials) {
+    mtlLoader.load('bovie.mtl', function (materials) {
+        console.log(materials)
         materials.preload();
+        //materials.materials.transparent = true;
+        //materials.materials.color = new THREE.Color( 0xFF0000 );
+        /*
+        var mat = materials.materials; 
+        for (var key in mat) {
+            //mat[key].color = new THREE.Color( 0xFF0000 );
+            //mat[key].transparent = true; // Изменить свойства материала следующим образом
+            //mat[key].opacity = 0.5; // Изменить свойства материала следующим образом
+        }*/
         let objLoader = new THREE.OBJLoader();
         objLoader.setMaterials(materials);
         objLoader.setPath(cfg.modelsPath);
@@ -157,7 +167,7 @@ window.onload = function () {
                 simulation.penInitialParams.penSize, simulation.penInitialParams.penSize);
             object.position.set(0, 0, 0);
             object.rotation.set(Math.PI / 2.0, 10, 0);
-            penObj.add(object);            
+            penObj.add(object);
         });
     });
     startPenObject();
