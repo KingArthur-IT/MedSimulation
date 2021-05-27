@@ -50,7 +50,7 @@ window.onload = function () {
             positionY: -40,
             positionZ: 0
         },
-        maxPenAngle: (29.0) * Math.PI / 180.0,
+        maxPenAngle: (28.0) * Math.PI / 180.0,
         maxPixelPenRadius: 200,
         trainingCheckPoints: {
             startPoint: { x: 430, y: 80 },
@@ -148,7 +148,6 @@ window.onload = function () {
     mtlLoader.setPath(cfg.modelsPath);
     //load pen
     mtlLoader.load('bovie.mtl', function (materials) {
-        console.log(materials)
         materials.preload();
         //materials.materials.transparent = true;
         //materials.materials.color = new THREE.Color( 0xFF0000 );
@@ -439,7 +438,6 @@ window.onload = function () {
                 / (simulation.penCoords.x - cfg.centerX);
             xAngle *= (simulation.penCoords.y - cfg.centerY + simulation.penInitialParams.positionY)
                 / (simulation.penCoords.y - cfg.centerY);
-            
             if (!Number.isNaN(yAngle))
                 penObj.rotation.y = -yAngle;
             if (!Number.isNaN(xAngle))
@@ -495,15 +493,30 @@ window.onload = function () {
             }
     }
     function practiceStage(newPenCoordX, newPenCoordY) {
-            movePen(newPenCoordX, newPenCoordY, simulation.maxPixelPenRadius);
-            //draw line 
-            let lineX = simulation.practice.lineXTransform * (simulation.penCoords.x - 0.5 * cfg.width) / (0.5 * cfg.width);
-            let lineY = simulation.practice.lineYTransform * (simulation.penCoords.y - 0.5 * cfg.height - 30) / (0.5 * cfg.height);
-            trajectoryPoints.push(new THREE.Vector3(lineX, lineY, 600));
-            trajectoryPoints2.push(new THREE.Vector3(lineX, lineY + 0.5, 600));
-            trajectoryPoints3.push(new THREE.Vector3(lineX, lineY - 0.5, 600));
-            trajectoryPoints4.push(new THREE.Vector3(lineX - 0.5, lineY, 600));
-            trajectoryPointsTime.push(new Date);
+        if (newPenCoordY < 30) return;
+        movePen(newPenCoordX, newPenCoordY, simulation.maxPixelPenRadius);
+        //draw line 
+        let lineX = simulation.practice.lineXTransform * (simulation.penCoords.x - 0.5 * cfg.width) / (0.5 * cfg.width);
+        let lineY = simulation.practice.lineYTransform * (simulation.penCoords.y - 0.5 * cfg.height - 30) / (0.5 * cfg.height);
+        
+        //for bottom trajectory
+        if (penObj.rotation.x > 0)
+            lineY -= penObj.rotation.x * 55.0;
+        lineX += penObj.rotation.y * 35.0;
+
+        //for left and right trajectory
+        if (Math.abs(penObj.rotation.y) > 0.15) {
+            lineY -= (Math.abs(penObj.rotation.y) - 0.15) * 70.0;
+            let side = Math.sign(penObj.rotation.y);
+            lineX -= side * (Math.abs(penObj.rotation.y) - 0.15) * 50.0;
+        }
+        
+        trajectoryPoints.push(new THREE.Vector3(lineX, lineY, 600));
+        trajectoryPoints2.push(new THREE.Vector3(lineX, lineY + 0.5, 600));
+        trajectoryPoints3.push(new THREE.Vector3(lineX, lineY - 0.5, 600));
+        trajectoryPoints4.push(new THREE.Vector3(lineX - 0.5, lineY, 600));
+        trajectoryPointsTime.push(new Date);
+    
     }
     function examStage(newPenCoordX, newPenCoordY) {
             let inputText = document.getElementById('examText');
