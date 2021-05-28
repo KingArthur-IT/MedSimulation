@@ -16,7 +16,7 @@ window.onload = function () {
     let simulation = {
         dataIndex: 2,
         cameraOffsetY: 60,
-        active: false,
+        isActive: false,
         waitBtnVisibility: 10000,
         trajectoryVisibilityTime: 5000,
         examMaxStopTime: 1000,
@@ -59,8 +59,8 @@ window.onload = function () {
             accuracy: 5
         },
         practice: {
-            lineXTransform: 290,
-            lineYTransform: -160,
+            lineXTransform: 250,
+            lineYTransform: -270,
         },
         exam: {
             count: 0,
@@ -92,8 +92,8 @@ window.onload = function () {
     // [0] and [1] for training mode, [2] - full path for exam mode
     let patternData = []; 
     patternData.push(); patternData.push(); patternData.push();
-    patternData[0] = JSON.parse(pattern1);
-    patternData[1] = JSON.parse(pattern2);
+    patternData[0] = JSON.parse(patternLeft);
+    patternData[1] = JSON.parse(patternRight);
     patternData[2] = JSON.parse(patternFull);
 
     //main canvas to draw the scene
@@ -149,15 +149,6 @@ window.onload = function () {
     //load pen
     mtlLoader.load('bovie.mtl', function (materials) {
         materials.preload();
-        //materials.materials.transparent = true;
-        //materials.materials.color = new THREE.Color( 0xFF0000 );
-        /*
-        var mat = materials.materials; 
-        for (var key in mat) {
-            //mat[key].color = new THREE.Color( 0xFF0000 );
-            //mat[key].transparent = true; // Изменить свойства материала следующим образом
-            //mat[key].opacity = 0.5; // Изменить свойства материала следующим образом
-        }*/
         let objLoader = new THREE.OBJLoader();
         objLoader.setMaterials(materials);
         objLoader.setPath(cfg.modelsPath);
@@ -176,33 +167,33 @@ window.onload = function () {
     //4 arays for line width
     let trajectoryPoints = [],
         trajectoryPointsTime = [], //time when the point was draw
-        trajectoryPoints2 = [],
-        trajectoryPoints3 = [],
-        trajectoryPoints4 = [];
-    let trajectoryGeometry, trajectoryGeometry2, trajectoryGeometry3, trajectoryGeometry4;
-    let lineObject, lineObject2, lineObject3, lineObject4;
+        trajectoryPointsTop = [],
+        trajectoryPointsBottom = [],
+        trajectoryPointsLeft = [];
+    let trajectoryGeometry, trajectoryGeometryTop, trajectoryGeometryBottom, trajectoryGeometryLeft;
+    let lineObject, lineObjectTop, lineObjectBottom, lineObjectLeft;
 
     //-----------------main render loop-------------------------
     function loop() {
-        scene.remove(lineObject); scene.remove(lineObject2)
-        scene.remove(lineObject3); scene.remove(lineObject4)
+        scene.remove(lineObject); scene.remove(lineObjectTop)
+        scene.remove(lineObjectBottom); scene.remove(lineObjectLeft)
         if (simulation.stages.isPractice) {                   
             let time = new Date;
             if (time - trajectoryPointsTime[0] > simulation.trajectoryVisibilityTime
                 && trajectoryPoints.length > 0) {
                 trajectoryPoints.shift(); trajectoryPointsTime.shift();
-                trajectoryPoints2.shift();  trajectoryPoints3.shift();  trajectoryPoints4.shift();
+                trajectoryPointsTop.shift();  trajectoryPointsBottom.shift();  trajectoryPointsLeft.shift();
             }
             trajectoryGeometry = new THREE.BufferGeometry().setFromPoints(trajectoryPoints);
-            trajectoryGeometry2 = new THREE.BufferGeometry().setFromPoints(trajectoryPoints2);
-            trajectoryGeometry3 = new THREE.BufferGeometry().setFromPoints(trajectoryPoints3);
-            trajectoryGeometry4 = new THREE.BufferGeometry().setFromPoints(trajectoryPoints4);
+            trajectoryGeometryTop = new THREE.BufferGeometry().setFromPoints(trajectoryPointsTop);
+            trajectoryGeometryBottom = new THREE.BufferGeometry().setFromPoints(trajectoryPointsBottom);
+            trajectoryGeometryLeft = new THREE.BufferGeometry().setFromPoints(trajectoryPointsLeft);
             lineObject = new THREE.Line(trajectoryGeometry, trajectoryMaterial);
-            lineObject2 = new THREE.Line(trajectoryGeometry2, trajectoryMaterial);
-            lineObject3 = new THREE.Line(trajectoryGeometry3, trajectoryMaterial);
-            lineObject4 = new THREE.Line(trajectoryGeometry4, trajectoryMaterial);
-            scene.add(lineObject); scene.add(lineObject2);
-            scene.add(lineObject3); scene.add(lineObject4);
+            lineObjectTop = new THREE.Line(trajectoryGeometryTop, trajectoryMaterial);
+            lineObjectBottom = new THREE.Line(trajectoryGeometryBottom, trajectoryMaterial);
+            lineObjectLeft = new THREE.Line(trajectoryGeometryLeft, trajectoryMaterial);
+            scene.add(lineObject); scene.add(lineObjectTop);
+            scene.add(lineObjectBottom); scene.add(lineObjectLeft);
         }//practice
         if (simulation.stages.isExam) {
             //non stop
@@ -228,7 +219,6 @@ window.onload = function () {
                     restartSimulationParms();
                 };
             };
-
         }
         renderer.render(scene, camera);
         requestAnimationFrame(loop)
@@ -252,7 +242,7 @@ window.onload = function () {
     };
     
     function mouse_down_handler() {
-        if (!simulation.active) return;
+        if (!simulation.isActive) return;
         document.getElementById('helpText').style.display = 'none';
         if (!simulation.mouse.isDown) {//lock and start
             canvas.requestPointerLock = canvas.requestPointerLock ||
@@ -276,8 +266,8 @@ window.onload = function () {
             document.exitPointerLock();
             simulation.mouse.isDown = false;
             startPenObject();
-            trajectoryPoints.length = 0; trajectoryPoints2.length = 0;
-            trajectoryPoints3.length = 0; trajectoryPoints4.length = 0;
+            trajectoryPoints.length = 0; trajectoryPointsTop.length = 0;
+            trajectoryPointsBottom.length = 0; trajectoryPointsLeft.length = 0;
             trajectoryPointsTime.length = 0;
             if (!simulation.exam.passed) {
                 scene.remove(light);
@@ -292,7 +282,7 @@ window.onload = function () {
         }
     }
     function mouse_move_handler(e) {        
-            if (!simulation.active) return;
+            if (!simulation.isActive) return;
             if (!simulation.mouse.isDown) return;
             //get movement of the mouse in lock API
             let movementX = e.movementX ||
@@ -328,7 +318,7 @@ window.onload = function () {
     }
 
     function touch_start_handler(e) {
-        if (!simulation.active) return;
+        if (!simulation.isActive) return;
         document.getElementById('helpText').style.display = 'none';
         let eps = simulation.penTopCoord.accuracy,  //pixel gap to get the pen by its end
             getPenX = simulation.penTopCoord.x,     //coords of pen`s end
@@ -349,7 +339,7 @@ window.onload = function () {
         }
         }
     function touch_move_handler(e) {
-            if (!simulation.active) return;
+            if (!simulation.isActive) return;
             e.preventDefault();
             if (!simulation.mouse.isDown) return;
         
@@ -374,8 +364,8 @@ window.onload = function () {
     function touch_up_handler() {
             simulation.mouse.isDown = false;
             startPenObject();
-            trajectoryPoints.length = 0; trajectoryPoints2.length = 0;
-            trajectoryPoints3.length = 0; trajectoryPoints4.length = 0;
+            trajectoryPoints.length = 0; trajectoryPointsTop.length = 0;
+            trajectoryPointsBottom.length = 0; trajectoryPointsLeft.length = 0;
             trajectoryPointsTime.length = 0;
             if (!simulation.exam.passed) {
                 scene.remove(light);
@@ -493,28 +483,11 @@ window.onload = function () {
             }
     }
     function practiceStage(newPenCoordX, newPenCoordY) {
-        //if (newPenCoordY < 30) return;
         movePen(newPenCoordX, newPenCoordY, simulation.maxPixelPenRadius);
         //draw line 
-        /*
-        let lineX = simulation.practice.lineXTransform * (simulation.penCoords.x - 0.5 * cfg.width) / (0.5 * cfg.width);
-        let lineY = simulation.practice.lineYTransform * (simulation.penCoords.y - 0.5 * cfg.height - 30) / (0.5 * cfg.height);
-        
-        //for bottom trajectory
-        if (penObj.rotation.x > 0)
-            lineY -= penObj.rotation.x * 55.0;
-        lineX += penObj.rotation.y * 35.0;
-
-        //for left and right trajectory
-        if (Math.abs(penObj.rotation.y) > 0.15) {
-            lineY -= (Math.abs(penObj.rotation.y) - 0.15) * 70.0;
-            let side = Math.sign(penObj.rotation.y);
-            lineX -= side * (Math.abs(penObj.rotation.y) - 0.15) * 50.0;
-        } 290, -160
-        */
-        let lineX = 250 * penObj.rotation.y;
-        let lineY = -270 * penObj.rotation.x;
-        lineX += 6;
+        let lineX = simulation.practice.lineXTransform * penObj.rotation.y;
+        let lineY = simulation.practice.lineYTransform * penObj.rotation.x;
+        lineX += simulation.penInitialParams.positionX;
         //for bottom trajectory
         if (penObj.rotation.x > 0.0)
             lineY -= penObj.rotation.x * 100.0;
@@ -528,9 +501,9 @@ window.onload = function () {
         }
         
         trajectoryPoints.push(new THREE.Vector3(lineX, lineY, 600));
-        trajectoryPoints2.push(new THREE.Vector3(lineX, lineY + 0.5, 600));
-        trajectoryPoints3.push(new THREE.Vector3(lineX, lineY - 0.5, 600));
-        trajectoryPoints4.push(new THREE.Vector3(lineX - 0.5, lineY, 600));
+        trajectoryPointsTop.push(new THREE.Vector3(lineX, lineY + 0.5, 600));
+        trajectoryPointsBottom.push(new THREE.Vector3(lineX, lineY - 0.5, 600));
+        trajectoryPointsLeft.push(new THREE.Vector3(lineX - 0.5, lineY, 600));
         trajectoryPointsTime.push(new Date);
     
     }
@@ -663,8 +636,8 @@ window.onload = function () {
                 simulation.checkpoint.startPointX = 0;
                 simulation.checkpoint.startPointY = 0;
             }
-            trajectoryPoints.length = 0; trajectoryPoints2.length = 0;
-            trajectoryPoints3.length = 0; trajectoryPoints4.length = 0;
+            trajectoryPoints.length = 0; trajectoryPointsTop.length = 0;
+            trajectoryPointsBottom.length = 0; trajectoryPointsLeft.length = 0;
             trajectoryPointsTime.length = 0;
     }
     function setLight(color) {
@@ -701,7 +674,7 @@ window.onload = function () {
             document.getElementById('popupText').value = texts.congratulations;
         };
         scene.add(popupPlaneMesh);
-        simulation.active = false;
+        simulation.isActive = false;
         scene.remove(penObj);
     }
     function removePopup() {
@@ -710,7 +683,7 @@ window.onload = function () {
         popupBtn.style.display = 'none';
         scene.remove(popupPlaneMesh);
         scene.add(penObj);
-        simulation.active = true;
+        simulation.isActive = true;
         document.getElementById('helpText').style.display = 'block';
         startPenObject();
     }
