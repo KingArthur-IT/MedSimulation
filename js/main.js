@@ -493,9 +493,10 @@ window.onload = function () {
             }
     }
     function practiceStage(newPenCoordX, newPenCoordY) {
-        if (newPenCoordY < 30) return;
+        //if (newPenCoordY < 30) return;
         movePen(newPenCoordX, newPenCoordY, simulation.maxPixelPenRadius);
         //draw line 
+        /*
         let lineX = simulation.practice.lineXTransform * (simulation.penCoords.x - 0.5 * cfg.width) / (0.5 * cfg.width);
         let lineY = simulation.practice.lineYTransform * (simulation.penCoords.y - 0.5 * cfg.height - 30) / (0.5 * cfg.height);
         
@@ -503,6 +504,21 @@ window.onload = function () {
         if (penObj.rotation.x > 0)
             lineY -= penObj.rotation.x * 55.0;
         lineX += penObj.rotation.y * 35.0;
+
+        //for left and right trajectory
+        if (Math.abs(penObj.rotation.y) > 0.15) {
+            lineY -= (Math.abs(penObj.rotation.y) - 0.15) * 70.0;
+            let side = Math.sign(penObj.rotation.y);
+            lineX -= side * (Math.abs(penObj.rotation.y) - 0.15) * 50.0;
+        } 290, -160
+        */
+        let lineX = 250 * penObj.rotation.y;
+        let lineY = -270 * penObj.rotation.x;
+        lineX += 6;
+        //for bottom trajectory
+        if (penObj.rotation.x > 0.0)
+            lineY -= penObj.rotation.x * 100.0;
+        lineX += penObj.rotation.y * 50.0;
 
         //for left and right trajectory
         if (Math.abs(penObj.rotation.y) > 0.15) {
