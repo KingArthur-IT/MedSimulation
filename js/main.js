@@ -298,7 +298,7 @@ window.onload = function () {
             let newPenCoordY = simulation.penCoords.y + movementY;
             //training mode
             if (simulation.stages.isTraining) {
-                if ((Math.abs(movementX) > 50 || Math.abs(movementY) > 50)) return;
+                if ((Math.abs(movementX) > 40 || Math.abs(movementY) > 40)) return;
                 trainingStage(newPenCoordX, newPenCoordY);
             };//if (stages.training)
             if (simulation.stages.isPractice) {
@@ -419,9 +419,9 @@ window.onload = function () {
         //restrict pen movement by radius
         let R = Math.sqrt((newPenCoordX - 425) * (newPenCoordX - 425) +
             (newPenCoordY - 225) * (newPenCoordY - 225));
-        if (R > 250) return
+        if (R > 260) return
         //more restrict pen movement by oval in bottom
-        if (newPenCoordY > 225 && R > 250 - (newPenCoordY - 225)) {
+        if (newPenCoordY > 225 && R > 260 - (newPenCoordY - 225)) {
             let side = 0;
             side = newPenCoordX < 410 ? 1 : 0;
             side = newPenCoordX > 440 ? -1 : 0;
@@ -484,9 +484,9 @@ window.onload = function () {
                             if (patternData[simulation.dataIndex][k] == 1)
                                 movePen(newPenCoordX, newPenCoordY - 7, simulation.maxPixelPenRadius);
                             else {
-                                k = parseInt((newPenCoordX + 10) + cfg.width * newPenCoordY);
+                                k = parseInt((newPenCoordX + 0) + cfg.width * newPenCoordY);
                                 if (patternData[simulation.dataIndex][k] == 1)
-                                    movePen((newPenCoordX + 10), newPenCoordY, simulation.maxPixelPenRadius);
+                                    movePen((newPenCoordX + 0), newPenCoordY, simulation.maxPixelPenRadius);
                             }
                         }
                     }
@@ -503,7 +503,7 @@ window.onload = function () {
         let R = Math.sqrt((lineX - 6) * (lineX - 6) + (lineY - 20) * (lineY - 20));
         let k = (R - 110) * 0.5;
         if (k > 0) {
-            lineY += penObj.rotation.x * k * 1.2;
+            lineY += penObj.rotation.x * k * 1.1;
             lineX -= penObj.rotation.y * k * 1.1;
         }
         //push to array to draw
