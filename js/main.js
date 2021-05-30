@@ -50,7 +50,7 @@ window.onload = function () {
             positionY: -40,
             positionZ: 0
         },
-        maxPenAngle: (28.0) * Math.PI / 180.0,
+        maxPenAngle: (29.0) * Math.PI / 180.0,
         maxPixelPenRadius: 200,
         trainingCheckPoints: {
             startPoint: { x: 430, y: 80 },
@@ -414,24 +414,35 @@ window.onload = function () {
     })
 
     //set of functions
-    function mod(x) { //x set -1 or 1 if it is out of interval [-1; 1] 
-        return Math.abs(x) > 1 ? 1.0 * x / Math.abs(x) : x;
-    }
     //get the rotation angles by the moving coords and rotate the pen
     function movePen(newPenCoordX, newPenCoordY, radius) {
-            simulation.penCoords.x = newPenCoordX; simulation.penCoords.y = newPenCoordY;
-            //caclulate rotation angle around y and x axises
-            let yAngle = simulation.maxPenAngle * mod((cfg.centerX - simulation.penCoords.x) / radius);
-            let xAngle = simulation.maxPenAngle * mod((simulation.penCoords.y - cfg.centerY) / radius);
-            //angle correction based on non centered obj position
-            yAngle *= (simulation.penCoords.x - cfg.centerX - simulation.penInitialParams.positionX)
-                / (simulation.penCoords.x - cfg.centerX);
-            xAngle *= (simulation.penCoords.y - cfg.centerY + simulation.penInitialParams.positionY)
-                / (simulation.penCoords.y - cfg.centerY);
-            if (!Number.isNaN(yAngle))
-                penObj.rotation.y = -yAngle;
-            if (!Number.isNaN(xAngle))
-                penObj.rotation.x = xAngle;
+        //restrict pen movement by radius
+        let R = Math.sqrt((newPenCoordX - 425) * (newPenCoordX - 425) +
+            (newPenCoordY - 225) * (newPenCoordY - 225));
+        if (R > 250) return
+        //more restrict pen movement by oval in bottom
+        if (newPenCoordY > 225 && R > 250 - (newPenCoordY - 225)) {
+            let side = 0;
+            side = newPenCoordX < 410 ? 1 : 0;
+            side = newPenCoordX > 440 ? -1 : 0;
+            simulation.penCoords.x += 1 * side;
+            simulation.penCoords.y -= 1;
+            return;
+        };
+        //move
+        simulation.penCoords.x = newPenCoordX; simulation.penCoords.y = newPenCoordY;
+        //caclulate rotation angle around y and x axises
+        let yAngle = simulation.maxPenAngle * ((cfg.centerX - simulation.penCoords.x) / radius);
+        let xAngle = simulation.maxPenAngle * ((simulation.penCoords.y - cfg.centerY) / radius);
+        //angle correction based on non centered obj position
+        yAngle *= (simulation.penCoords.x - cfg.centerX - simulation.penInitialParams.positionX)
+            / (simulation.penCoords.x - cfg.centerX);
+        xAngle *= (simulation.penCoords.y - cfg.centerY + simulation.penInitialParams.positionY)
+            / (simulation.penCoords.y - cfg.centerY);
+        if (!Number.isNaN(yAngle))
+            penObj.rotation.y = -yAngle;
+        if (!Number.isNaN(xAngle))
+            penObj.rotation.x = xAngle;
     }
     function trainingStage(newPenCoordX, newPenCoordY) {
             //change index of the pattern data
@@ -483,23 +494,19 @@ window.onload = function () {
             }
     }
     function practiceStage(newPenCoordX, newPenCoordY) {
+        //move
         movePen(newPenCoordX, newPenCoordY, simulation.maxPixelPenRadius);
-        //draw line 
-        let lineX = simulation.practice.lineXTransform * penObj.rotation.y;
-        let lineY = simulation.practice.lineYTransform * penObj.rotation.x;
-        lineX += simulation.penInitialParams.positionX;
-        //for bottom trajectory
-        if (penObj.rotation.x > 0.0)
-            lineY -= penObj.rotation.x * 100.0;
-        lineX += penObj.rotation.y * 50.0;
-
-        //for left and right trajectory
-        if (Math.abs(penObj.rotation.y) > 0.15) {
-            lineY -= (Math.abs(penObj.rotation.y) - 0.15) * 70.0;
-            let side = Math.sign(penObj.rotation.y);
-            lineX -= side * (Math.abs(penObj.rotation.y) - 0.15) * 50.0;
+        //create track line from the pen`s top
+        //numbers were selectes empirically
+        let lineY = Math.sin(-penObj.rotation.x - 0.04) * 315 ;
+        let lineX = 6.0 + Math.sin(penObj.rotation.y) * 315;
+        let R = Math.sqrt((lineX - 6) * (lineX - 6) + (lineY - 20) * (lineY - 20));
+        let k = (R - 110) * 0.5;
+        if (k > 0) {
+            lineY += penObj.rotation.x * k * 1.2;
+            lineX -= penObj.rotation.y * k * 1.1;
         }
-        
+        //push to array to draw
         trajectoryPoints.push(new THREE.Vector3(lineX, lineY, 600));
         trajectoryPointsTop.push(new THREE.Vector3(lineX, lineY + 0.5, 600));
         trajectoryPointsBottom.push(new THREE.Vector3(lineX, lineY - 0.5, 600));
