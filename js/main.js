@@ -54,9 +54,9 @@ window.onload = function () {
         maxPixelPenRadius: 200,
         trainingCheckPoints: {
             startPoint: { x: 430, y: 80 },
-            firstChange: { x: 430, y: 240 },
-            secondChange: { x: 430, y: 375 },
-            accuracy: 5
+            firstChange: { x: 430, y: 225 },
+            secondChange: { x: 430, y: 330 },
+            accuracy: 3
         },
         practice: {
             lineXTransform: 250,
@@ -161,6 +161,7 @@ window.onload = function () {
         });
     });
     startPenObject();
+   
 
     //trajectory line for practice stage
     let trajectoryMaterial = new THREE.LineBasicMaterial({ color: 0xff00ff });
@@ -421,7 +422,7 @@ window.onload = function () {
             (newPenCoordY - 225) * (newPenCoordY - 225));
         if (R > 260) return
         //more restrict pen movement by oval in bottom
-        if (newPenCoordY > 225 && R > 260 - (newPenCoordY - 225)) {
+        if (newPenCoordY > 225 && R > 260 - (newPenCoordY - 225)*1.3) {
             let side = 0;
             side = newPenCoordX < 410 ? 1 : 0;
             side = newPenCoordX > 440 ? -1 : 0;
@@ -445,48 +446,54 @@ window.onload = function () {
             penObj.rotation.x = xAngle;
     }
     function trainingStage(newPenCoordX, newPenCoordY) {
-            //change index of the pattern data
-            let eps = simulation.trainingCheckPoints.accuracy;
-            if ((Math.abs(newPenCoordX - simulation.trainingCheckPoints.firstChange.x) < eps &&
-                Math.abs(newPenCoordY - simulation.trainingCheckPoints.firstChange.y) < 12.0 * eps) ||
-                (Math.abs(newPenCoordX - simulation.trainingCheckPoints.secondChange.x) < eps &&
-                    Math.abs(newPenCoordY - simulation.trainingCheckPoints.secondChange.y) < 12.0 * eps)) {
+        //change index of the pattern data
+        let eps = simulation.trainingCheckPoints.accuracy;
+        if ((Math.abs(newPenCoordX - simulation.trainingCheckPoints.firstChange.x) < eps &&
+            Math.abs(newPenCoordY - simulation.trainingCheckPoints.firstChange.y) < 10.0 * eps) ||
+            (Math.abs(newPenCoordX - simulation.trainingCheckPoints.secondChange.x) < eps &&
+                Math.abs(newPenCoordY - simulation.trainingCheckPoints.secondChange.y) < 10.0 * eps)) {
             
-                let sign = Math.sign(simulation.trainingCheckPoints.firstChange.x - simulation.penCoords.x);
-                newPenCoordX += sign * 2.0 * eps;
-                simulation.dataIndex = simulation.dataIndex == 0 ? 1 : 0;
-                movePen(newPenCoordX, newPenCoordY, simulation.maxPixelPenRadius);
-                return;
-            }
-            if (simulation.dataIndex == 2 &&
-                Math.abs(newPenCoordX - simulation.trainingCheckPoints.startPoint.x) > 2.0 * simulation.trainingCheckPoints.accuracy &&
-                Math.abs(newPenCoordY - simulation.trainingCheckPoints.startPoint.y) > 2.0 * simulation.trainingCheckPoints.accuracy) {
-                let directionSign = (newPenCoordX - simulation.trainingCheckPoints.startPoint.x) * (newPenCoordY - simulation.trainingCheckPoints.startPoint.y);
-                simulation.dataIndex = directionSign > 0 ? 1 : 0;
-            }
+            simulation.dataIndex = simulation.dataIndex == 0 ? 1 : 0; 
+            let sign = Math.sign(simulation.trainingCheckPoints.firstChange.x - simulation.penCoords.x);
+            newPenCoordX += sign * 3.0 * eps;            
+            movePen(newPenCoordX, newPenCoordY, simulation.maxPixelPenRadius);
+            return;
+        }
+        if (simulation.dataIndex == 2 &&
+            (Math.abs(newPenCoordX - simulation.trainingCheckPoints.startPoint.x) > 3.0 * eps ||
+            Math.abs(newPenCoordY - simulation.trainingCheckPoints.startPoint.y) > 3.0 * eps)) {
+            let directionSign = (newPenCoordX - simulation.trainingCheckPoints.startPoint.x) * (newPenCoordY - simulation.trainingCheckPoints.startPoint.y);
+            simulation.dataIndex = directionSign > 0 ? 1 : 0;
+        }
+
         let k = parseInt(newPenCoordX + cfg.width * newPenCoordY); //index in data
             if (patternData[simulation.dataIndex][k] == 1)
                 movePen(newPenCoordX, newPenCoordY, simulation.maxPixelPenRadius);
             else {
-                k = parseInt(newPenCoordX + cfg.width * (newPenCoordY + 3));
+                k = parseInt(newPenCoordX + cfg.width * (newPenCoordY + 2));
                 if (patternData[simulation.dataIndex][k] == 1)
-                    movePen(newPenCoordX, newPenCoordY + 3, simulation.maxPixelPenRadius);
+                    movePen(newPenCoordX, newPenCoordY + 2, simulation.maxPixelPenRadius);
                 else {
-                    k = parseInt(newPenCoordX + cfg.width * (newPenCoordY - 3));
+                    k = parseInt(newPenCoordX + cfg.width * (newPenCoordY - 2));
                     if (patternData[simulation.dataIndex][k] == 1)
-                        movePen(newPenCoordX, newPenCoordY - 3, simulation.maxPixelPenRadius);
+                        movePen(newPenCoordX, newPenCoordY - 2, simulation.maxPixelPenRadius);
                     else {
-                        k = parseInt(newPenCoordX + cfg.width * (newPenCoordY + 8));
+                        k = parseInt(newPenCoordX + cfg.width * (newPenCoordY + 4));
                         if (patternData[simulation.dataIndex][k] == 1)
-                            movePen(newPenCoordX, newPenCoordY + 7, simulation.maxPixelPenRadius);
+                            movePen(newPenCoordX, newPenCoordY + 4, simulation.maxPixelPenRadius);
                         else {
-                            k = parseInt(newPenCoordX + cfg.width * (newPenCoordY - 8));
+                            k = parseInt(newPenCoordX + cfg.width * (newPenCoordY - 4));
                             if (patternData[simulation.dataIndex][k] == 1)
-                                movePen(newPenCoordX, newPenCoordY - 7, simulation.maxPixelPenRadius);
+                                movePen(newPenCoordX, newPenCoordY - 4, simulation.maxPixelPenRadius);
                             else {
-                                k = parseInt((newPenCoordX + 0) + cfg.width * newPenCoordY);
+                                k = parseInt((newPenCoordX + 3) + cfg.width * newPenCoordY);
                                 if (patternData[simulation.dataIndex][k] == 1)
-                                    movePen((newPenCoordX + 0), newPenCoordY, simulation.maxPixelPenRadius);
+                                    movePen((newPenCoordX + 3), newPenCoordY, simulation.maxPixelPenRadius);
+                                else {
+                                    k = parseInt((newPenCoordX - 3) + cfg.width * newPenCoordY);
+                                    if (patternData[simulation.dataIndex][k] == 1)
+                                        movePen((newPenCoordX - 3), newPenCoordY, simulation.maxPixelPenRadius);
+                                }
                             }
                         }
                     }
@@ -498,14 +505,17 @@ window.onload = function () {
         movePen(newPenCoordX, newPenCoordY, simulation.maxPixelPenRadius);
         //create track line from the pen`s top
         //numbers were selectes empirically
-        let lineY = Math.sin(-penObj.rotation.x - 0.04) * 315 ;
-        let lineX = 6.0 + Math.sin(penObj.rotation.y) * 315;
-        let R = Math.sqrt((lineX - 6) * (lineX - 6) + (lineY - 20) * (lineY - 20));
-        let k = (R - 110) * 0.5;
-        if (k > 0) {
-            lineY += penObj.rotation.x * k * 1.1;
-            lineX -= penObj.rotation.y * k * 1.1;
+        let R = Math.sqrt((newPenCoordX - 425) * (newPenCoordX - 425) +
+            (newPenCoordY - 225) * (newPenCoordY - 225));
+        let k = 315; 
+        
+        if (R > 140) {
+            k -= (R - 140) * 0.35;
         }
+       
+        let lineY = Math.sin(-penObj.rotation.x - 0.04) * k;
+        let lineX = 6.0 + Math.sin(penObj.rotation.y) * k;
+
         //push to array to draw
         trajectoryPoints.push(new THREE.Vector3(lineX, lineY, 600));
         trajectoryPointsTop.push(new THREE.Vector3(lineX, lineY + 0.5, 600));
