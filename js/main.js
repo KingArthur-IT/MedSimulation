@@ -448,28 +448,38 @@ window.onload = function () {
     function trainingStage(newPenCoordX, newPenCoordY) {
         //change index of the pattern data
         let eps = simulation.trainingCheckPoints.accuracy;
-        if ((Math.abs(newPenCoordX - simulation.trainingCheckPoints.firstChange.x) < eps &&
-            Math.abs(newPenCoordY - simulation.trainingCheckPoints.firstChange.y) < 10.0 * eps) ||
-            (Math.abs(newPenCoordX - simulation.trainingCheckPoints.secondChange.x) < eps &&
-                Math.abs(newPenCoordY - simulation.trainingCheckPoints.secondChange.y) < 10.0 * eps)) {
-            
-            simulation.dataIndex = simulation.dataIndex == 0 ? 1 : 0; 
+        //check points change data index
+        if ((Math.abs(simulation.penCoords.x - simulation.trainingCheckPoints.firstChange.x) < eps &&
+             Math.abs(simulation.penCoords.y - simulation.trainingCheckPoints.firstChange.y) < 10.0 * eps) ||
+            (Math.abs(simulation.penCoords.x - simulation.trainingCheckPoints.secondChange.x) < eps &&
+             Math.abs(simulation.penCoords.y - simulation.trainingCheckPoints.secondChange.y) < 10.0 * eps)
+        ) {
+            //console.log('change')
+            simulation.dataIndex = simulation.dataIndex == 0 ? 1 : 0;
+            if (Math.abs(simulation.penCoords.x - simulation.trainingCheckPoints.secondChange.x) < eps &&
+                Math.abs(simulation.penCoords.y - simulation.trainingCheckPoints.secondChange.y) < 10.0 * eps)
+            {
+                let side = Math.sign(simulation.trainingCheckPoints.secondChange.x - simulation.penCoords.x);
+                if (side > 0) simulation.dataIndex = 1;
+                else simulation.dataIndex = 0;
+            }
             let sign = Math.sign(simulation.trainingCheckPoints.firstChange.x - simulation.penCoords.x);
-            newPenCoordX += sign * 3.0 * eps;            
+            newPenCoordX += sign * 2.0 * eps;            
             movePen(newPenCoordX, newPenCoordY, simulation.maxPixelPenRadius);
             return;
         }
         if (simulation.dataIndex == 2 &&
             (Math.abs(newPenCoordX - simulation.trainingCheckPoints.startPoint.x) > 3.0 * eps ||
-            Math.abs(newPenCoordY - simulation.trainingCheckPoints.startPoint.y) > 3.0 * eps)) {
+                Math.abs(newPenCoordY - simulation.trainingCheckPoints.startPoint.y) > 3.0 * eps))
+        {
             let directionSign = (newPenCoordX - simulation.trainingCheckPoints.startPoint.x) * (newPenCoordY - simulation.trainingCheckPoints.startPoint.y);
             simulation.dataIndex = directionSign > 0 ? 1 : 0;
         }
 
         let k = parseInt(newPenCoordX + cfg.width * newPenCoordY); //index in data
-            if (patternData[simulation.dataIndex][k] == 1)
-                movePen(newPenCoordX, newPenCoordY, simulation.maxPixelPenRadius);
-            else {
+        if (patternData[simulation.dataIndex][k] == 1)
+            movePen(newPenCoordX, newPenCoordY, simulation.maxPixelPenRadius);
+        else {
                 k = parseInt(newPenCoordX + cfg.width * (newPenCoordY + 2));
                 if (patternData[simulation.dataIndex][k] == 1)
                     movePen(newPenCoordX, newPenCoordY + 2, simulation.maxPixelPenRadius);
@@ -498,7 +508,7 @@ window.onload = function () {
                         }
                     }
                 }
-            }
+        }
     }
     function practiceStage(newPenCoordX, newPenCoordY) {
         //move
